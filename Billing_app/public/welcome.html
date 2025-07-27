@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome - ABC Company</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2 class="company-title">ABC Company</h2>
+      <ul class="menu">
+        <li id="make_bill"><a href="make_bill.html">Make a New Bill</a></li>
+        <li><a href="#">Edit a Bill</a></li>
+        <li><a href="#">Report</a></li>
+        <li><a href="#">Check Ledger</a></li>
+        <li><a href="#">Add Purchase</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header>
+        <h1>Welcome to ABC Company</h1>
+        <button id="logoutBtn">Logout</button>
+      </header>
+      <section class="info">
+        <p>Select an option from the left menu to get started.</p>
+      </section>
+    </main>
+  </div>
+</body>
+<script>
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await fetch("/api/logout", { method: "POST" });
+    window.location.href = "index.html"; // Redirect to login
+  });
+  document.querySelector('a[href="#make-bill"]').addEventListener("click", (e) => {
+  e.preventDefault();
+  window.location.href = "make-bill.html";
+});
+
+  // Check if user is logged in
+  fetch("/api/check-auth")
+    .then(res => {
+      if (!res.ok) {
+        window.location.href = "index.html"; // Not logged in
+      }
+    });
+</script>
+</html>

@@ -1,0 +1,437 @@
+document.addEventListener("DOMContentLoaded", () => {
+  // -------------------------
+  // LOGIN PAGE HOOK
+  // -------------------------
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          window.location.href = "welcome.html";
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Server error. Try again later.");
+      }
+    });
+
+    return; // Stop further billing code if we're on login page
+  }
+  // ---------- ELEMENTS ----------
+  const billTable        = document.getElementById("billTable");
+  if (!billTable) return;
+
+  const tbody            = billTable.querySelector("tbody");
+  const billDateEl       = document.getElementById("billDate");
+  const addRowBtn        = document.getElementById("addRowBtn");
+  const downloadBtn      = document.getElementById("downloadBtn");
+  const discountEl       = document.getElementById("discount");
+  const receivedEl       = document.getElementById("received");
+  const subTotalEl       = document.getElementById("subTotal");
+  const grandTotalEl     = document.getElementById("grandTotal");
+  const balanceEl        = document.getElementById("balance");
+  const amountWordsEl    = document.getElementById("amountWords");
+
+  const estimateNoEl     = document.getElementById("estimateNo");
+  const customerNameEl   = document.getElementById("customerName");
+  const customerPhoneEl  = document.getElementById("customerPhone");
+
+  const catRow                 = document.getElementById("catRow");
+  const materialBlockplumbing  = document.getElementById("materialBlockplumbing");
+  const materialRowplumbing    = document.getElementById("materialRowplumbing");
+
+  // Size & fitting blocks (ids from your HTML)
+  const sizeBlocks = {
+    CPVC   : document.getElementById("sizeBlockCPVC"),
+    PVC    : document.getElementById("sizeBlockPVC"),
+    GI     : document.getElementById("sizeBlockGI"),
+    Passion: document.getElementById("sizeBlockPassion"),
+    Tank   : document.getElementById("sizeBlockTank")
+  };
+
+  const fittingBlocks = {
+    CPVC: document.getElementById("fittingBlockCPVC"),
+    PVC : document.getElementById("fittingBlockPVC"),
+    GI  : document.getElementById("fittingBlockGI")
+  };
+
+  // ---------- STATE ----------
+  let sn = 1;
+  let activeRow = null;
+  let selectedCategory = null;
+  let selectedMaterial = null;
+  let selectedSize = null;
+  let selectedFitting = null;
+
+  // ---------- INIT ----------
+  billDateEl.value = new Date().toISOString().split("T")[0];
+
+  addRowBtn.addEventListener("click", () => addRow());
+  discountEl.addEventListener("input", computeTotals);
+  receivedEl.addEventListener("input", computeTotals);
+  downloadBtn.addEventListener("click", downloadPDF);
+
+  addRow();
+  computeTotals();
+
+  // ---------- TABLE ----------
+  function addRow(product = "") {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="sn"></td>
+      <td><input type="text" class="product" value="${product}"></td>
+      <td><input type="number" class="qty" min="1" value="1"></td>
+      <td>
+        <select class="unit">
+          <option value="Pcs" selected>Pcs</option>
+          <option value="Kg">Kg</option>
+          <option value="Sq-Ft">Sq-Ft</option>
+          <option value="Manual">Manual</option>
+        </select>
+      </td>
+      <td><input type="number" class="price" min="0" value="0"></td>
+      <td class="row-total">0.00</td>
+      <td><button class="del">❌</button></td>
+    `;
+    tbody.appendChild(tr);
+    renumber();
+
+    tr.querySelector(".qty").addEventListener("input", computeTotals);
+    tr.querySelector(".price").addEventListener("input", computeTotals);
+    tr.querySelector(".del").addEventListener("click", () => {
+      tr.remove();
+      renumber();
+      computeTotals();
+      if (activeRow === tr) activeRow = null;
+    });
+
+    tr.addEventListener("click", () => setActiveRow(tr));
+    setActiveRow(tr);
+    computeTotals();
+  }
+
+  function renumber() {
+    sn = 1;
+    [...tbody.querySelectorAll("tr")].forEach(tr => {
+      tr.querySelector(".sn").textContent = sn++;
+    });
+  }
+
+  function setActiveRow(tr) {
+    if (activeRow) activeRow.classList.remove("active");
+    activeRow = tr;
+    if (activeRow) activeRow.classList.add("active");
+  }
+  // Auto-increment Estimate No
+function getNextEstimateNo() {
+  let lastEstimate = parseInt(localStorage.getItem("lastEstimateNo") || "0", 10);
+  lastEstimate++;
+  localStorage.setItem("lastEstimateNo", lastEstimate);
+  return lastEstimate;
+}
+
+// Set initial Estimate No if field is empty
+if (estimateNoEl && !estimateNoEl.value) {
+  estimateNoEl.value = getNextEstimateNo();
+}
+
+  function computeTotals() {
+    let subTotal = 0;
+    tbody.querySelectorAll("tr").forEach(tr => {
+      const qty   = parseFloat(tr.querySelector(".qty").value) || 0;
+      const price = parseFloat(tr.querySelector(".price").value) || 0;
+      const rowTotal = qty * price;
+      tr.querySelector(".row-total").textContent = rowTotal.toFixed(2);
+      subTotal += rowTotal;
+    });
+
+    const discount   = parseFloat(discountEl.value) || 0;
+    const received   = parseFloat(receivedEl.value) || 0;
+    const grandTotal = Math.max(subTotal - discount, 0);
+    const balance    = Math.max(grandTotal - received, 0);
+
+    subTotalEl.value   = subTotal.toFixed(2);
+    grandTotalEl.value = grandTotal.toFixed(2);
+    balanceEl.value    = balance.toFixed(2);
+
+    if (amountWordsEl) {
+      amountWordsEl.value = numberToWordsIndian(Math.round(grandTotal)) + " only";
+    }
+  }
+
+  // ---------- CATEGORY PICKER ----------
+  if (catRow) {
+    catRow.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+
+      activateSingle(chip, "#catRow .chip");
+      selectedCategory = chip.dataset.cat;
+
+      // Reset plumbing fields
+      selectedMaterial = selectedSize = selectedFitting = null;
+      hideAllSizeBlocks();
+      hideAllFittingBlocks();
+
+      if (selectedCategory === "Plumbing") {
+        materialBlockplumbing.style.display = "block";
+      } else {
+        materialBlockplumbing.style.display = "none";
+        pushToActiveRow(selectedCategory); // put only the category name
+      }
+    });
+  }
+
+  // ---------- MATERIAL PICKER (Plumbing only) ----------
+  if (materialRowplumbing) {
+    materialRowplumbing.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+
+      activateSingle(chip, "#materialRowplumbing .chip");
+
+      // Trim any accidental spaces in data-mat (e.g. "Passion ")
+      selectedMaterial = (chip.dataset.mat || "").trim();
+
+      // Reset & hide all size/fitting blocks
+      selectedSize = selectedFitting = null;
+      hideAllSizeBlocks();
+      hideAllFittingBlocks();
+
+      // Show the correct ones
+      if (selectedMaterial === "CPVC") {
+        show(sizeBlocks.CPVC, fittingBlocks.CPVC);
+      } else if (selectedMaterial === "PVC") {
+        show(sizeBlocks.PVC, fittingBlocks.PVC);
+      } else if (selectedMaterial === "GI") {
+        show(sizeBlocks.GI, fittingBlocks.GI);
+      } else if (selectedMaterial === "Passion") {
+        show(sizeBlocks.Passion, null); // no fitting block for Passion
+      } else if (selectedMaterial === "Tank") {
+        show(sizeBlocks.Tank, null); // no fitting block for Tank
+      } else {
+        // For materials that have no size/fitting (Pani Tape, Cutting Blade, etc.)
+        updateProductName();
+      }
+    });
+  }
+
+  function show(sizeBlock, fittingBlock) {
+    if (sizeBlock) sizeBlock.style.display = "block";
+    if (fittingBlock) fittingBlock.style.display = "block";
+  }
+
+  // ---------- SIZE PICKERS ----------
+  Object.values(sizeBlocks).forEach(block => {
+    if (!block) return;
+    block.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      block.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      selectedSize = chip.dataset.size;
+      updateProductName();
+    });
+  });
+
+  // ---------- FITTING PICKERS ----------
+  Object.values(fittingBlocks).forEach(block => {
+    if (!block) return;
+    block.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      block.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      selectedFitting = chip.dataset.fit;
+      updateProductName();
+    });
+  });
+
+  function hideAllSizeBlocks() {
+    Object.values(sizeBlocks).forEach(block => block && (block.style.display = "none"));
+  }
+
+  function hideAllFittingBlocks() {
+    Object.values(fittingBlocks).forEach(block => block && (block.style.display = "none"));
+  }
+
+  function activateSingle(chip, selector) {
+    document.querySelectorAll(selector).forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+  }
+
+  function updateProductName() {
+    if (!activeRow) return;
+    const parts = [];
+    if (selectedMaterial) parts.push(selectedMaterial);
+    if (selectedSize)     parts.push(selectedSize);
+    if (selectedFitting)  parts.push(selectedFitting);
+    // If nothing else chosen, still show category if available
+    if (parts.length === 0 && selectedCategory) parts.push(selectedCategory);
+    activeRow.querySelector(".product").value = parts.join(" ");
+  }
+
+  function pushToActiveRow(text) {
+    if (!activeRow) return;
+    activeRow.querySelector(".product").value = text || "";
+  }
+
+  // ---------- PDF ----------
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "pt", "a4");
+
+    const companyName  = "ABC Company";
+    const companyPhone = "Phone: 9825333385";
+    const estimateNo   = estimateNoEl.value || "-";
+    const date         = billDateEl.value || "-";
+    const cust         = customerNameEl.value || "-";
+    const phone        = customerPhoneEl.value || "-";
+    const subTotal     = subTotalEl.value || "0";
+    const discount     = discountEl.value || "0";
+    const grandTotal   = grandTotalEl.value || "0";
+    const received     = receivedEl.value || "0";
+    const balance      = balanceEl.value || "0";
+    const amountWords  = amountWordsEl ? (amountWordsEl.value || "") : "";
+
+    doc.setFontSize(16);
+    doc.text("Estimated Bill", 297.5, 30, { align: "center" });
+
+    doc.setFontSize(18).setFont(undefined, "bold");
+    doc.text(companyName, 40, 60);
+    doc.setFontSize(10).setFont(undefined, "normal");
+    doc.text(companyPhone, 40, 75);
+
+    const leftX = 40, rightX = 340, boxY = 95, boxH = 60, boxW = 515;
+    doc.rect(leftX, boxY, boxW, boxH);
+    doc.line(rightX, boxY, rightX, boxY + boxH);
+
+    doc.setFontSize(11);
+    doc.text("Bill To:", leftX + 8, boxY + 18);
+    doc.setFontSize(10);
+    doc.text(cust, leftX + 8, boxY + 34);
+    if (phone) doc.text(phone, leftX + 8, boxY + 50);
+
+    doc.setFontSize(11);
+    doc.text("Estimate Details:", rightX + 8, boxY + 18);
+    doc.setFontSize(10);
+    doc.text(`No: ${estimateNo}`, rightX + 8, boxY + 34);
+    doc.text(`Date: ${date}`, rightX + 8, boxY + 50);
+
+    const tableData = [];
+    tbody.querySelectorAll("tr").forEach(tr => {
+      const sn      = tr.querySelector(".sn").textContent;
+      const product = tr.querySelector(".product").value || "";
+      const unit    = tr.querySelector(".unit").value || "";
+      const qty     = tr.querySelector(".qty").value || "0";
+      const price   = parseFloat(tr.querySelector(".price").value || "0").toFixed(2);
+      const amt     = tr.querySelector(".row-total").textContent || "0.00";
+      tableData.push([ sn, product, qty, unit, `Rs. ${price}`, `Rs. ${amt}` ]);
+    });
+
+    doc.autoTable({
+      head: [["#", "Item name", "Quantity", "Unit", "Price/ Unit(Rs)", "Amount(Rs)"]],
+      body: tableData,
+      startY: boxY + boxH + 20,
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [60, 60, 60], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 220 },
+        2: { cellWidth: 65, halign: "right" },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 95, halign: "right" },
+        5: { cellWidth: 95, halign: "right" }
+      }
+    });
+
+    let y = doc.lastAutoTable.finalY + 8;
+    doc.setFont(undefined, "bold");
+    doc.text(`Total`, 40, y + 15);
+    doc.text(`Rs. ${grandTotal}`, 500, y + 15, { align: "right" });
+
+    y += 40;
+    doc.setFont(undefined, "normal");
+    doc.text(`Sub Total :`, 400, y);
+    doc.text(`Rs. ${subTotal}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.text(`Discount :`, 400, y);
+    doc.text(`Rs. ${discount}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.setFont(undefined, "bold");
+    doc.text(`Total :`, 400, y);
+    doc.text(`Rs. ${grandTotal}`, 575, y, { align: "right" });
+
+    // Amount in words
+    if (amountWords) {
+      y += 30;
+      doc.setFont(undefined, "normal");
+      doc.text("Invoice Amount in Words:", 40, y);
+      const splitWords = doc.splitTextToSize(amountWords, 515);
+      doc.text(splitWords, 40, y + 15);
+      y += 40 + (splitWords.length * 12);
+    } else {
+      y += 30;
+    }
+
+    doc.text("Received :", 400, y);
+    doc.text(`Rs. ${received}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.text("Balance  :", 400, y);
+    doc.text(`Rs. ${balance}`, 575, y, { align: "right" });
+
+    const fileName = `Estimate_${estimateNo || customerNameEl.value || "Bill"}.pdf`;
+    doc.save(fileName);
+  }
+
+  // ---------- NUMBER TO WORDS (Indian System) ----------
+  function numberToWordsIndian(num) {
+    if (num === 0) return "Zero Rupees";
+    const a = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven",
+      "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    function inWords(n) {
+      if (n < 20) return a[n];
+      if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+      if (n < 1000) return a[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " and " + inWords(n % 100) : "");
+      return "";
+    }
+
+    let s = "";
+    const crore = Math.floor(num / 10000000);
+    num %= 10000000;
+    const lakh = Math.floor(num / 100000);
+    num %= 100000;
+    const thousand = Math.floor(num / 1000);
+    num %= 1000;
+    const hundred = Math.floor(num / 100);
+    const rest = num % 100;
+
+    if (crore) s += inWords(crore) + " Crore ";
+    if (lakh) s += inWords(lakh) + " Lakh ";
+    if (thousand) s += inWords(thousand) + " Thousand ";
+    if (hundred) s += a[hundred] + " Hundred ";
+    if (rest) s += (s !== "" ? "and " : "") + inWords(rest) + " ";
+    return s.trim() + " Rupees";
+  }
+});

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Estimate Bill – ABC Company</title>
+<link rel="stylesheet" href="style.css">
+
+<!-- ====== STYLE ====== -->
+
+</head>
+<body>
+<header>ABC Company – Estimate Bill</header>
+
+<div class="layout">
+  <!-- LEFT: BILL -->
+  <div class="left">
+    <h2>Estimated Bill</h2>
+
+    <div class="bill-header">
+      <div>
+        <label>Estimate No.</label>
+        <input type="text" id="estimateNo" placeholder="e.g. 2">
+      </div>
+      <div>
+        <label>Date</label>
+        <input type="date" id="billDate">
+      </div>
+      <div>
+        <label>Customer Name</label>
+        <input type="text" id="customerName" placeholder="Enter customer name">
+      </div>
+      <div>
+        <label>Phone</label>
+        <input type="text" id="customerPhone" placeholder="Customer phone (optional)">
+      </div>
+    </div>
+
+    <table id="billTable">
+      <thead>
+        <tr>
+          <th>S.No</th>
+          <th>Product Name</th>
+          <th>Qty</th>
+          <th>Unit</th>
+          <th>Unit Price</th>
+          <th>Amount (Rs)</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="actions">
+      <button id="addRowBtn">+ Add Row</button>
+      <button class="secondary" id="downloadBtn">Download PDF</button>
+    </div>
+
+    <div class="totals">
+      <div>
+        <label>Discount (Rs)</label>
+        <input type="number" id="discount" value="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label>Sub Total (Rs)</label>
+        <input type="text" id="subTotal" readonly>
+      </div>
+      <div>
+        <label>Grand Total (Rs)</label>
+        <input type="text" id="grandTotal" readonly>
+      </div>
+      <div>
+        <label>Received (Rs)</label>
+        <input type="number" id="received" value="0" min="0" step="0.01">
+      </div>
+      <div>
+        <label>Balance (Rs)</label>
+        <input type="text" id="balance" readonly>
+      </div>
+    </div>
+
+    <div class="amount-words">
+      <label>Amount in Words</label>
+      <textarea id="amountWords" readonly></textarea>
+    </div>
+  </div>
+
+  <!-- RIGHT: PICKER / SUGGESTIONS -->
+  <div class="right">
+    <div class="note">Click a row on the left to select it. Your selections below will autofill into that row’s Product Name.</div>
+
+    <!-- MAIN CATEGORY -->
+    <div class="section-title">Category</div>
+    <div class="chip-row" id="catRow">
+      <span class="chip" data-cat="Plumbing">Plumbing</span>
+      <span class="chip" data-cat="Wiring">Wiring</span>
+      <span class="chip" data-cat="TMT">TMT</span>
+      <span class="chip" data-cat="Cement">Cement</span>
+      <span class="chip" data-cat="Paint">Paint</span>
+      <span class="chip" data-cat="Tin">Tin</span>
+      <span class="chip" data-cat="Ply">Ply</span>
+      <span class="chip" data-cat="Tile">Tile</span>
+      <span class="chip" data-cat="Pipe">Pipe</span>
+      <span class="chip" data-cat="Door">Door</span>
+      <span class="chip" data-cat="Manual">Manual</span>
+    </div>
+
+    <!-- SUB: MATERIAL (PVC / CPVC / GI / tank) -->
+    <div id="materialBlockplumbing" style="display:none;">   
+      <div class="section-title">Material</div>
+      <div class="chip-row" id="materialRowplumbing">
+        <span class="chip" data-mat="PVC">PVC</span>
+        <span class="chip" data-mat="CPVC">CPVC</span>
+        <span class="chip" data-mat="GI">GI</span>
+        <span class="chip" data-mat="Tank">Tank</span>
+        <span class="chip" data-mat="Pani Tape">pani Tape</span>
+        <span class="chip" data-mat="Cutting Blade">Cutting Blade</span>
+        <span class="chip" data-mat="J-hook">J-hook</span>
+        <span class="chip" data-mat="Concealed">Concealed</span>
+        <span class="chip" data-mat="Connection Pipe">Connection Pipe</span>
+        <span class="chip" data-mat="Passion ">Passion</span>
+        <span class="chip" data-mat="Comod">Comod</span>
+        <span class="chip" data-mat="Basin">Basin</span>
+
+      </div>
+    </div>
+
+    <!-- SIZE of cpvc-->
+    <div id="sizeBlockCPVC" style="display:none;">
+      <div class="section-title">Size</div>
+      <div class="chip-row" id="sizeRowCPVC">
+        <span class="chip" data-size='3/4"'>3/4"</span>
+        <span class="chip" data-size='1"'>1"</span>
+        <span class="chip" data-size='1.5"'>1.5"</span>
+      </div>
+    </div>
+
+    <!--Size for PVC Fitting-->
+    <div id="sizeBlockPVC" style="display:none;">
+      <div class="section-title">Size</div>
+      <div class="chip-row" id="sizeRowPVC">
+        <span class="chip" data-size='1.5"'>1.5"</span>
+        <span class="chip" data-size='2.5"'>2.5"</span>
+        <span class="chip" data-size='4"'>4"</span>
+        <span class="chip" data-size='6"'>6"</span>
+      </div>
+    </div>
+
+    <!--Fitting for Passion Fitting-->
+    <div id="sizeBlockPassion" style="display:none;">
+      <div class="section-title">Size</div>
+      <div class="chip-row" id="sizeRowPassion">
+        <span class="chip" data-size='Wall Mixer'>Wall Mixer</span>
+        <span class="chip" data-size='Bib-Cock'>Bib-Cock</span>
+        <span class="chip" data-size='Angle-Cock'>Angle-Cock</span>
+        <span class="chip" data-size='Swan Neck'>Swan Neck</span>
+        <span class="chip" data-size='Long Body'>Long Body</span>
+        <span class="chip" data-size='Piller Cock'>Piller Cock</span>
+        <span class="chip" data-size='Non-Telephone'>Non-Telephone</span>
+        <span class="chip" data-size='Gun'>Gun</span>
+        <span class="chip" data-size='Shower'>Shower</span>
+        <span class="chip" data-size='CV fringes'>CV fringes</span>
+        
+      </div>
+    </div>
+
+    <!--Size for GI Fitting-->
+    <div id="sizeBlockGI" style="display:none;">
+      <div class="section-title">Size</div>
+      <div class="chip-row" id="sizeRowGI">
+        <span class="chip" data-size='1/2"'>1/2"</span>
+        <span class="chip" data-size='3/4"'>3/4"</span>
+        <span class="chip" data-size='1"'>1"</span>
+        <span class="chip" data-size='1.5"'>1.5"</span>
+        <span class="chip" data-size='2"'>2"</span>
+      </div>
+    </div>
+
+    <!-- Size of the Tank -->
+    <div id="sizeBlockTank" style="display:none;">
+      <div class="section-title">Size</div>
+      <div class="chip-row" id="sizeRowTANK">
+        <span class="chip" data-size='200L'>200L</span>
+        <span class="chip" data-size='500L'>500L</span>
+        <span class="chip" data-size='750L'>750L</span>
+        <span class="chip" data-size='1000L'>1000L</span>
+        
+      </div>
+    </div>
+
+    <!-- FITTING  for CPVC-->
+    <div id="fittingBlockCPVC" style="display:none;">
+      <div class="section-title">Fitting</div>
+      <div class="chip-row" id="fittingRowCPVC">
+        <span class="chip" data-fit="pipe">pipe</span>
+        <span class="chip" data-fit="Elbow">Elbow</span>
+        <span class="chip" data-fit="Tee">Tee</span>
+        <span class="chip" data-fit="Union">Union</span>
+        <span class="chip" data-fit="45°">45°</span>
+        <span class="chip" data-fit="Gate Valve">Gate Valve</span>
+        <span class="chip" data-fit="Coupler">Socket</span>
+        <span class="chip" data-fit="Reducer">Reducer</span>
+        <span class="chip" data-fit="End Cap">End Cap</span>
+        <span class="chip" data-fit="Female Socket">Female Socket</span>
+        <span class="chip" data-fit="Female Elbow">Female Elbow</span>
+        <span class="chip" data-fit="Female Tee">Female Tee</span>
+        <span class="chip" data-fit="Male Socket">Male Socket</span>
+        <span class="chip" data-fit="Long-Plug">Long Plug</span>
+        <span class="chip" data-fit="Reducer Elbow">Reducer Elbow</span>
+        <span class="chip" data-fit="Reducer Tee">Reducer Tee</span>
+        <span class="chip" data-fit="Over Bend">Over bend</span>
+        <span class="chip" data-fit="Cross Tee">Cross Tee</span>
+        <span class="chip" data-fit="Tank Nipple">Tank Nipple</span>
+        <span class="chip" data-fit="Mixer Adapter">Mixer Adapter</span>
+        <span class="chip" data-fit="Solvent">Solvent</span>
+        
+      </div>
+    </div>
+
+    <!-- FITTING  for GI-->
+    <div id="fittingBlockGI" style="display:none;">
+      <div class="section-title">Fitting</div>
+      <div class="chip-row" id="fittingRowGI">
+        <span class="chip" data-fit="pipe">pipe</span>
+        <span class="chip" data-fit="Nipple">Nipple</span>
+        <span class="chip" data-fit="Elbow">Elbow</span>
+        <span class="chip" data-fit="Tee">Tee</span>
+        <span class="chip" data-fit="Union">Union</span>
+        <span class="chip" data-fit="45°">45°</span>
+        <span class="chip" data-fit="Gate Valve">Gate Valve</span>
+        <span class="chip" data-fit="Coupler">Socket</span>
+        <span class="chip" data-fit="Reducer">Reducer</span>
+        <span class="chip" data-fit="End Cap">End Cap</span>
+        <span class="chip" data-fit="Female Socket">Female Socket</span>
+        <span class="chip" data-fit="Female Elbow">Female Elbow</span>
+        <span class="chip" data-fit="Female Tee">Female Tee</span>
+        <span class="chip" data-fit="Male Socket">Male Socket</span>
+        <span class="chip" data-fit="Reducer Elbow">Reducer Elbow</span>
+        <span class="chip" data-fit="Reducer Tee">Reducer Tee</span>
+        <span class="chip" data-fit="Tank Nipple">Tank Nipple</span>
+        <span class="chip" data-fit="M-seal">M-seal</span>
+        
+      </div>
+    </div>
+
+    <!-- Fitting For PVC -->
+    <div id="fittingBlockPVC" style="display:none;">
+      <div class="section-title">Fitting</div>
+      <div class="chip-row" id="fittingRowPVC">
+        <span class="chip" data-fit="pipe">pipe</span>
+        <span class="chip" data-fit="Elbow">Elbow</span>
+        <span class="chip" data-fit="Tee">Tee</span>
+        <span class="chip" data-fit="45°">45°</span>
+        <span class="chip" data-fit="Socket">Socket</span>
+        <span class="chip" data-fit="Reducer">Reducer</span>
+        <span class="chip" data-fit="End Cap">End Cap</span>
+        <span class="chip" data-fit="P-Trap">P-Trap</span>
+        <span class="chip" data-fit="Trap">Trap</span>
+        <span class="chip" data-fit="Reducer Elbow">Reducer Elbow</span>
+        <span class="chip" data-fit="Reducer Tee">Reducer Tee</span>
+        <span class="chip" data-fit="Jali">Jali</span>
+        <span class="chip" data-fit="Pain Sheet">pain Sheet</span>
+        <span class="chip" data-fit="Door Elbow">Door Elbow</span>
+        <span class="chip" data-fit="Door Tee">Door Tee</span>
+        <span class="chip" data-fit="Solvent">Solvent</span>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== LIBS FOR PDF ====== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+<!-- ====== APP SCRIPT ====== -->
+<script src="Billing.js" defer></script>
+
+</body>
+</html>
+
+

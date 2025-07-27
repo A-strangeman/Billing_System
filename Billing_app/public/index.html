@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>User Login</title>
+<link rel="stylesheet" href="style.css">
+
+
+</head>
+<body>
+<div class="top-strip"></div>
+
+<div class="wrap">
+  <!-- Left: avatar -->
+  <div class="avatar">
+    <div class="avatar-circle">
+      <!-- Replace with your own avatar -->
+      <img src="image/undraw_finance-guy-avatar_vhop.png" alt="User">
+    </div>
+  </div>
+
+  <!-- Right: form -->
+  <form class="form" id="loginForm" novalidate>
+    <h1>Admin Login</h1>
+
+    <div class="input">
+      <span class="icon">📧</span>
+      <input type="email" id="email" placeholder="Email Id" required />
+    </div>
+
+    <div class="input">
+      <span class="icon">🔒</span>
+      <input type="password" id="password" placeholder="Password" required minlength="6" />
+    </div>
+
+    <button type="submit" class="btn">Login</button>
+
+    <div class="forgot">
+      <a href="#">Forgot Username / Password?</a>
+    </div>
+  </form>
+</div>
+</body>
+<script src = "Billing.js"> </script>
+</html>

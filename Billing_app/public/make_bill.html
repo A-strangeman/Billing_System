@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Make a Bill - ABC Company</title>
+  <style>
+    :root {
+      --accent: #FF6363;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: var(--accent);
+      color: white;
+      padding: 15px 20px;
+      font-size: 1.5rem;
+      text-align: center;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      height: 100%;
+    }
+
+    /* Left Panel - Full Height */
+    .left-panel {
+      width: 250px;
+      background: #fff;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      margin: 0;
+    }
+
+    .btn-category {
+      padding: 15px;
+      margin: 0;
+      border: none;
+      border-bottom: 1px solid #eee;
+      background: #fafafa;
+      font-size: 1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-category:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.01);
+    }
+
+    .back-btn {
+      margin: auto 10px 15px 10px;
+      padding: 10px;
+      background: #444;
+      color: #fff;
+      text-align: center;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background: var(--accent);
+    }
+
+    /* Right Panel */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f9f9f9;
+      font-size: 1.3rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Make a Bill</div>
+  <div class="content">
+    <!-- Left Side -->
+    <div class="left-panel">
+      <button class="btn-category" data-category="Plumbing">Plumbing → PVC / CPVC</button>
+      <button class="btn-category" data-category="Wiring">Wiring</button>
+      <button class="btn-category" data-category="TMT">TMT</button>
+      <button class="btn-category" data-category="Cement">Cement</button>
+      <button class="btn-category" data-category="Paint">Paint</button>
+      <button class="btn-category" data-category="Tin">Tin</button>
+      <button class="btn-category" data-category="Ply">Ply</button>
+      <button class="btn-category" data-category="Tile">Tile</button>
+      <button class="btn-category" data-category="Pipe">Pipe</button>
+      <button class="btn-category" data-category="Manual">Manual</button>
+      <a href="welcome.html" class="back-btn">← Back</a>
+    </div>
+
+    <!-- Right Side -->
+    <div class="right-panel">
+      Choose a category to create a bill.
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll(".btn-category").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const category = btn.dataset.category;
+        window.location.href = `bill.html?category=${encodeURIComponent(category)}`;
+      });
+    });
+  </script>
+</body>
+</html>
