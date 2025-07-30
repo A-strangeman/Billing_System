@@ -439,6 +439,7 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-width: 600px; /* keeps them in a confined area */
 }
 
 .chip {
@@ -467,6 +468,7 @@ button:disabled {
   margin: 6px 0 14px;
 }
 
+/* ---------- RESPONSIVE ---------- */
 @media (max-width: 980px) {
   .layout {
     flex-direction: column;

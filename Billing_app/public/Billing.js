@@ -53,22 +53,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const catRow                 = document.getElementById("catRow");
   const materialBlockplumbing  = document.getElementById("materialBlockplumbing");
+  const materialBlockwiring  = document.getElementById("materialBlockwiring");
   const materialRowplumbing    = document.getElementById("materialRowplumbing");
+  const materialRowwiring    = document.getElementById("materialRowwiring");
 
   // Size & fitting blocks (ids from your HTML)
-  const sizeBlocks = {
-    CPVC   : document.getElementById("sizeBlockCPVC"),
-    PVC    : document.getElementById("sizeBlockPVC"),
-    GI     : document.getElementById("sizeBlockGI"),
-    Passion: document.getElementById("sizeBlockPassion"),
-    Tank   : document.getElementById("sizeBlockTank")
-  };
+  // Map raw HTML data-mat to canonical KEY we use in JS
+const MATERIAL_CANON = {
+  "wire": "WIRE",
+  "switch board": "SWITCHBOARD",
+  "single": "SINGLE",
+  "modular": "MODULAR",
+  "box": "BOX",
+  "mcb": "MCB",
+  "mcb-box": "MCB_BOX",
+  "pipe": "PIPE",
+  "screw": "SCREW",
+  "fiber-plate": "FIBER_PLATE",
+  "wire beet": "WIRE_BEET",
+  "gi-wire": "GI_WIRE" // you have it in HTML; add blocks if you need
+};
 
-  const fittingBlocks = {
-    CPVC: document.getElementById("fittingBlockCPVC"),
-    PVC : document.getElementById("fittingBlockPVC"),
-    GI  : document.getElementById("fittingBlockGI")
-  };
+const sizeBlocks = {
+  // Plumbing
+  CPVC   : document.getElementById("sizeBlockCPVC"),
+  PVC    : document.getElementById("sizeBlockPVC"),
+  GI     : document.getElementById("sizeBlockGI"),
+  Passion: document.getElementById("sizeBlockPassion"),
+  Tank   : document.getElementById("sizeBlockTank"),
+
+  // Wiring (canonical keys)
+  WIRE        : document.getElementById("sizeBlockWIRE"),
+  SWITCHBOARD : document.getElementById("sizeBlockSWITCHBOARD"),
+  MODULAR     : document.getElementById("sizeBlockMODULAR"),
+  BOX         : document.getElementById("sizeBlockBOX"),
+  MCB         : document.getElementById("sizeBlockMCB"),
+  MCB_BOX     : document.getElementById("sizeBlockMCB-BOX"),
+  PIPE        : document.getElementById("sizeBlockPIPE"),
+  WIRE_BEET   : document.getElementById("sizeBlockWIRE-BEET"),
+  SCREW       : document.getElementById("sizeBlockSCREW"),
+  SINGLE      : document.getElementById("sizeBlockSINGLE"),
+  FIBER_PLATE : document.getElementById("sizeBlockFIBER-PLATE"),
+  GI_WIRE     : null // add if you later create one
+};
+
+ const fittingBlocks = {
+  // Plumbing
+  CPVC : document.getElementById("fittingBlockCPVC"),
+  PVC  : document.getElementById("fittingBlockPVC"),
+  GI   : document.getElementById("fittingBlockGI"),
+
+  // Wiring
+  WIRE        : document.getElementById("fittingBlockWIRE"),
+  SWITCHBOARD : document.getElementById("fittingBlockSWITCHBOARD"),
+  MODULAR     : document.getElementById("fittingBlockMODULAR"),
+  MCB         : document.getElementById("fittingBlockMCB") || null // (you don't have one now)
+};
 
   // ---------- STATE ----------
   let sn = 1;
@@ -101,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <option value="Pcs" selected>Pcs</option>
           <option value="Kg">Kg</option>
           <option value="Sq-Ft">Sq-Ft</option>
+          <option value="Mtr">Mtr</option>
           <option value="Manual">Manual</option>
         </select>
       </td>
@@ -174,62 +215,97 @@ if (estimateNoEl && !estimateNoEl.value) {
     }
   }
 
-  // ---------- CATEGORY PICKER ----------
-  if (catRow) {
-    catRow.addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip");
-      if (!chip) return;
+// ---------- CATEGORY PICKER ----------
+if (catRow) {
+  catRow.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
 
-      activateSingle(chip, "#catRow .chip");
-      selectedCategory = chip.dataset.cat;
+    activateSingle(chip, "#catRow .chip");
+    selectedCategory = chip.dataset.cat;
 
-      // Reset plumbing fields
-      selectedMaterial = selectedSize = selectedFitting = null;
-      hideAllSizeBlocks();
-      hideAllFittingBlocks();
+    // Reset plumbing & wiring fields
+    selectedMaterial = selectedSize = selectedFitting = null;
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
 
-      if (selectedCategory === "Plumbing") {
-        materialBlockplumbing.style.display = "block";
-      } else {
-        materialBlockplumbing.style.display = "none";
-        pushToActiveRow(selectedCategory); // put only the category name
-      }
-    });
-  }
+    // Show blocks based on category
+    if (selectedCategory === "Plumbing") {
+      materialBlockplumbing.style.display = "block";
+      materialBlockwiring.style.display = "none";
+    } 
+    else if (selectedCategory === "Wiring") {
+      materialBlockwiring.style.display = "block";
+      materialBlockplumbing.style.display = "none";
+    } 
+    else {
+      materialBlockplumbing.style.display = "none";
+      materialBlockwiring.style.display = "none";
+      pushToActiveRow(selectedCategory); // put only the category name
+    }
+  });
+}
 
-  // ---------- MATERIAL PICKER (Plumbing only) ----------
-  if (materialRowplumbing) {
-    materialRowplumbing.addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip");
-      if (!chip) return;
 
-      activateSingle(chip, "#materialRowplumbing .chip");
+// ---------- MATERIAL PICKER (Plumbing) ----------
+if (materialRowplumbing) {
+  materialRowplumbing.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
 
-      // Trim any accidental spaces in data-mat (e.g. "Passion ")
-      selectedMaterial = (chip.dataset.mat || "").trim();
+    activateSingle(chip, "#materialRowplumbing .chip");
 
-      // Reset & hide all size/fitting blocks
-      selectedSize = selectedFitting = null;
-      hideAllSizeBlocks();
-      hideAllFittingBlocks();
+    selectedMaterial = (chip.dataset.mat || "").trim();
 
-      // Show the correct ones
-      if (selectedMaterial === "CPVC") {
-        show(sizeBlocks.CPVC, fittingBlocks.CPVC);
-      } else if (selectedMaterial === "PVC") {
-        show(sizeBlocks.PVC, fittingBlocks.PVC);
-      } else if (selectedMaterial === "GI") {
-        show(sizeBlocks.GI, fittingBlocks.GI);
-      } else if (selectedMaterial === "Passion") {
-        show(sizeBlocks.Passion, null); // no fitting block for Passion
-      } else if (selectedMaterial === "Tank") {
-        show(sizeBlocks.Tank, null); // no fitting block for Tank
-      } else {
-        // For materials that have no size/fitting (Pani Tape, Cutting Blade, etc.)
-        updateProductName();
-      }
-    });
-  }
+    selectedSize = selectedFitting = null;
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
+
+    if (selectedMaterial === "CPVC") {
+      show(sizeBlocks.CPVC, fittingBlocks.CPVC);
+    } else if (selectedMaterial === "PVC") {
+      show(sizeBlocks.PVC, fittingBlocks.PVC);
+    } else if (selectedMaterial === "GI") {
+      show(sizeBlocks.GI, fittingBlocks.GI);
+    } else if (selectedMaterial === "Passion") {
+      show(sizeBlocks.Passion, null);
+    } else if (selectedMaterial === "Tank") {
+      show(sizeBlocks.Tank, null);
+    } else {
+      updateProductName();
+    }
+  });
+}
+
+// ---------- MATERIAL PICKER (Wiring) ----------
+if (materialRowwiring) {
+  materialRowwiring.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+
+    activateSingle(chip, "#materialRowwiring .chip");
+
+    // raw -> lower -> canonical key
+    const raw = (chip.dataset.mat || "").trim().toLowerCase();
+    const canon = MATERIAL_CANON[raw]; // e.g. "wire" -> "WIRE"
+    selectedMaterial = canon || raw;   // fall back to raw if unmapped
+
+    selectedSize = selectedFitting = null;
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
+
+    const sizeBlock    = sizeBlocks[selectedMaterial];
+    const fittingBlock = fittingBlocks[selectedMaterial];
+
+    if (sizeBlock || fittingBlock) {
+      show(sizeBlock, fittingBlock);
+    } else {
+      // materials like Tape / Cutting Blade / J-hook etc.
+      updateProductName();
+    }
+  });
+}
+
 
   function show(sizeBlock, fittingBlock) {
     if (sizeBlock) sizeBlock.style.display = "block";
@@ -399,7 +475,7 @@ if (estimateNoEl && !estimateNoEl.value) {
     doc.text("Balance  :", 400, y);
     doc.text(`Rs. ${balance}`, 575, y, { align: "right" });
 
-    const fileName = `Estimate_${estimateNo || customerNameEl.value || "Bill"}.pdf`;
+    const fileName = `${estimateNo.value && customerNameEl.value || "Bill"}.pdf`;
     doc.save(fileName);
   }
 
