@@ -54,8 +54,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const catRow                 = document.getElementById("catRow");
   const materialBlockplumbing  = document.getElementById("materialBlockplumbing");
   const materialBlockwiring  = document.getElementById("materialBlockwiring");
+  const materialBlockTMT  = document.getElementById("materialBlockTMT");
   const materialRowplumbing    = document.getElementById("materialRowplumbing");
   const materialRowwiring    = document.getElementById("materialRowwiring");
+  const materialRowTMT    = document.getElementById("materialRowTMT");
 
   // Size & fitting blocks (ids from your HTML)
   // Map raw HTML data-mat to canonical KEY we use in JS
@@ -95,6 +97,8 @@ const sizeBlocks = {
   SINGLE      : document.getElementById("sizeBlockSINGLE"),
   FIBER_PLATE : document.getElementById("sizeBlockFIBER-PLATE"),
   GI_WIRE     : null // add if you later create one
+
+  
 };
 
  const fittingBlocks = {
@@ -141,8 +145,11 @@ const sizeBlocks = {
           <option value="Pcs" selected>Pcs</option>
           <option value="Kg">Kg</option>
           <option value="Sq-Ft">Sq-Ft</option>
+          <option value="Pkts">Pkts</option>
           <option value="Mtr">Mtr</option>
-          <option value="Manual">Manual</option>
+          <option value="Bundle">Bundle</option>
+          <option value="ft">ft</option>
+          
         </select>
       </td>
       <td><input type="number" class="price" min="0" value="0"></td>
@@ -232,11 +239,17 @@ if (catRow) {
     // Show blocks based on category
     if (selectedCategory === "Plumbing") {
       materialBlockplumbing.style.display = "block";
-      materialBlockwiring.style.display = "none";
+      materialBlockTMT.style.display = "none";
     } 
     else if (selectedCategory === "Wiring") {
       materialBlockwiring.style.display = "block";
       materialBlockplumbing.style.display = "none";
+      materialBlockTMT.style.display = "none";
+    } 
+    else if (selectedCategory === "TMT") {
+      materialBlockTMT.style.display = "block";
+      materialBlockplumbing.style.display = "none";
+      materialBlockwiring.style.display = "none";
     } 
     else {
       materialBlockplumbing.style.display = "none";
@@ -306,7 +319,22 @@ if (materialRowwiring) {
   });
 }
 
+if (materialRowTMT) {
+  materialRowTMT.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
 
+    activateSingle(chip, "#materialRowTMT .chip");
+
+    selectedMaterial = (chip.dataset.mat || "").trim();
+
+    selectedSize = selectedFitting = null;
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
+    updateProductName();
+
+});
+}
   function show(sizeBlock, fittingBlock) {
     if (sizeBlock) sizeBlock.style.display = "block";
     if (fittingBlock) fittingBlock.style.display = "block";
