@@ -54,10 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const catRow                 = document.getElementById("catRow");
   const materialBlockplumbing  = document.getElementById("materialBlockplumbing");
   const materialBlockwiring  = document.getElementById("materialBlockwiring");
+  const materialBlockCEMENT  = document.getElementById("materialBlockCEMENT");
   const materialBlockTMT  = document.getElementById("materialBlockTMT");
   const materialRowplumbing    = document.getElementById("materialRowplumbing");
   const materialRowwiring    = document.getElementById("materialRowwiring");
   const materialRowTMT    = document.getElementById("materialRowTMT");
+  const materialRowCEMENT    = document.getElementById("materialRowCEMENT");
 
   // Size & fitting blocks (ids from your HTML)
   // Map raw HTML data-mat to canonical KEY we use in JS
@@ -240,6 +242,8 @@ if (catRow) {
     if (selectedCategory === "Plumbing") {
       materialBlockplumbing.style.display = "block";
       materialBlockTMT.style.display = "none";
+      materialBlockwiring.style.display = "none";
+      materialBlockCEMENT.style.display = "none";
     } 
     else if (selectedCategory === "Wiring") {
       materialBlockwiring.style.display = "block";
@@ -250,6 +254,12 @@ if (catRow) {
       materialBlockTMT.style.display = "block";
       materialBlockplumbing.style.display = "none";
       materialBlockwiring.style.display = "none";
+    } 
+    else if (selectedCategory === "Cement") {
+      materialBlockCEMENT.style.display = "block";
+      materialBlockplumbing.style.display = "none";
+      materialBlockwiring.style.display = "none";
+      materialBlockTMT.style.display = "none";
     } 
     else {
       materialBlockplumbing.style.display = "none";
@@ -319,6 +329,7 @@ if (materialRowwiring) {
   });
 }
 
+// material PIcker for TMT
 if (materialRowTMT) {
   materialRowTMT.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
@@ -335,6 +346,26 @@ if (materialRowTMT) {
 
 });
 }
+
+// material PIcker for CEMENT
+if (materialRowCEMENT) {
+  materialRowCEMENT.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+
+    activateSingle(chip, "#materialRowCEMENT .chip");
+
+    selectedMaterial = (chip.dataset.mat || "").trim();
+
+    selectedSize = selectedFitting = null;
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
+    updateProductName();
+
+});
+}
+
+
   function show(sizeBlock, fittingBlock) {
     if (sizeBlock) sizeBlock.style.display = "block";
     if (fittingBlock) fittingBlock.style.display = "block";
