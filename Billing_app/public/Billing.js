@@ -136,44 +136,78 @@ const sizeBlocks = {
   computeTotals();
 
   // ---------- TABLE ----------
-  function addRow(product = "") {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="sn"></td>
-      <td><input type="text" class="product" value="${product}"></td>
-      <td><input type="number" class="qty" min="1" value="1"></td>
-      <td>
-        <select class="unit">
-          <option value="Pcs" selected>Pcs</option>
-          <option value="Kg">Kg</option>
-          <option value="Sq-Ft">Sq-Ft</option>
-          <option value="Pkts">Pkts</option>
-          <option value="Mtr">Mtr</option>
-          <option value="Bundle">Bundle</option>
-          <option value="ft">ft</option>
-          
-        </select>
-      </td>
-      <td><input type="number" class="price" min="0" value="0"></td>
-      <td class="row-total">0.00</td>
-      <td><button class="del">❌</button></td>
-    `;
-    tbody.appendChild(tr);
-    renumber();
+function addRow(product = "") {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td class="sn"></td>
+    <td><input type="text" class="product" value="${product}"></td>
+    <td><input type="number" class="qty" min="1" value=""></td>
+    <td>
+      <select class="unit">
+        <option value="Pcs" selected>Pcs</option>
+        <option value="Kg">Kg</option>
+        <option value="Sq-Ft">Sq-Ft</option>
+        <option value="Pkts">Pkts</option>
+        <option value="Mtr">Mtr</option>
+        <option value="Bundle">Bundle</option>
+        <option value="ft">ft</option>
+      </select>
+    </td>
+    <td><input type="number" class="price" min="0" value=""></td>
+    <td class="row-total">0.00</td>
+    <td><button class="del">❌</button></td>
+  `;
+  tbody.appendChild(tr);
+  renumber();
 
-    tr.querySelector(".qty").addEventListener("input", computeTotals);
-    tr.querySelector(".price").addEventListener("input", computeTotals);
-    tr.querySelector(".del").addEventListener("click", () => {
-      tr.remove();
-      renumber();
-      computeTotals();
-      if (activeRow === tr) activeRow = null;
-    });
+  const productInput = tr.querySelector(".product");
+  const qtyInput = tr.querySelector(".qty");
+  const priceInput = tr.querySelector(".price");
 
-    tr.addEventListener("click", () => setActiveRow(tr));
-    setActiveRow(tr);
-    computeTotals();
+  // Move focus on Enter
+  productInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      qtyInput.focus();
+    }
+  });
+
+  qtyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      priceInput.focus();
+    }
+  });
+
+  priceInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addRow();
+    setTimeout(() => {
+      const rows = tbody.querySelectorAll("tr");
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        const productField = lastRow.querySelector(".product");
+        if (productField) productField.focus();
+      }
+    }, 0);
   }
+});
+
+  qtyInput.addEventListener("input", computeTotals);
+  priceInput.addEventListener("input", computeTotals);
+  tr.querySelector(".del").addEventListener("click", () => {
+    tr.remove();
+    renumber();
+    computeTotals();
+    if (activeRow === tr) activeRow = null;
+  });
+
+  tr.addEventListener("click", () => setActiveRow(tr));
+  setActiveRow(tr);
+  computeTotals();
+}
+
 
   function renumber() {
     sn = 1;
@@ -249,11 +283,13 @@ if (catRow) {
       materialBlockwiring.style.display = "block";
       materialBlockplumbing.style.display = "none";
       materialBlockTMT.style.display = "none";
+      materialBlockCEMENT.style.display = "none";
     } 
     else if (selectedCategory === "TMT") {
       materialBlockTMT.style.display = "block";
       materialBlockplumbing.style.display = "none";
       materialBlockwiring.style.display = "none";
+      materialBlockCEMENT.style.display = "none";
     } 
     else if (selectedCategory === "Cement") {
       materialBlockCEMENT.style.display = "block";
@@ -264,6 +300,8 @@ if (catRow) {
     else {
       materialBlockplumbing.style.display = "none";
       materialBlockwiring.style.display = "none";
+      materialBlockTMT.style.display = "none";
+      materialBlockCEMENT.style.display = "none";
       pushToActiveRow(selectedCategory); // put only the category name
     }
   });
@@ -410,21 +448,37 @@ if (materialRowCEMENT) {
     chip.classList.add("active");
   }
 
-  function updateProductName() {
-    if (!activeRow) return;
-    const parts = [];
-    if (selectedMaterial) parts.push(selectedMaterial);
-    if (selectedSize)     parts.push(selectedSize);
-    if (selectedFitting)  parts.push(selectedFitting);
-    // If nothing else chosen, still show category if available
-    if (parts.length === 0 && selectedCategory) parts.push(selectedCategory);
-    activeRow.querySelector(".product").value = parts.join(" ");
-  }
+function updateProductName() {
+    if (!activeRow) return;
+    const parts = [];
+    if (selectedMaterial) parts.push(selectedMaterial);
+    if (selectedSize)     parts.push(selectedSize);
+    if (selectedFitting)  parts.push(selectedFitting);
+    // If nothing else chosen, still show category if available
+    if (parts.length === 0 && selectedCategory) parts.push(selectedCategory);
+    
+    const productInput = activeRow.querySelector(".product");
+    const qtyInput = activeRow.querySelector(".qty");
+
+    productInput.value = parts.join(" ");
+
+   
+    qtyInput.focus(); 
+  }
 
   function pushToActiveRow(text) {
     if (!activeRow) return;
-    activeRow.querySelector(".product").value = text || "";
+
+    const productInput = activeRow.querySelector(".product");
+    const qtyInput = activeRow.querySelector(".qty");
+
+  // Fill product name
+    productInput.value = text || "";
+
   }
+
+
+
 
   // ---------- PDF ----------
   async function downloadPDF() {
