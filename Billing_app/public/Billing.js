@@ -128,7 +128,7 @@ const sizeBlocks = {
 
   //Tin
  "Aarti Color" : document.getElementById("sizeBlockAarti Color"),
-  "Aarti White" : document.getElementById("sizeBlockAarti White"), // Corrected key to match HTML
+ "Aarti White" : document.getElementById("sizeBlockAarti White"), // Corrected key to match HTML
   "Hilti Screw" : document.getElementById("sizeBlockHilti Screw"),
   "Maigra" : document.getElementById("sizeBlockMaigra"),
   "Nails" : document.getElementById("sizeBlockNails"), 
