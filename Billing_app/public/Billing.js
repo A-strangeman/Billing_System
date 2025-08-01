@@ -57,11 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const materialBlockCEMENT  = document.getElementById("materialBlockCEMENT");
   const materialBlockTMT  = document.getElementById("materialBlockTMT");
   const materialBlockPAINT  = document.getElementById("materialBlockPAINT");
+  const materialBlockTIN    = document.getElementById("materialBlockTIN");
   const materialRowplumbing    = document.getElementById("materialRowplumbing");
   const materialRowwiring    = document.getElementById("materialRowwiring");
   const materialRowTMT    = document.getElementById("materialRowTMT");
   const materialRowCEMENT    = document.getElementById("materialRowCEMENT");
   const materialRowPAINT    = document.getElementById("materialRowPAINT");
+  const materialRowTIN    = document.getElementById("materialRowTIN");
 
   // Size & fitting blocks (ids from your HTML)
   // Map raw HTML data-mat to canonical KEY we use in JS
@@ -120,8 +122,17 @@ const sizeBlocks = {
   "Wood Primer": document.getElementById("sizeBlockWood Primer"),
   "Brush": document.getElementById("sizeBlockBrush"),
   "Roller": document.getElementById("sizeBlockRoller"),
-  "Putty": document.getElementById("sizeBlockPutty")
+  "Putty": document.getElementById("sizeBlockPutty"),
   // Note: Tarpin Oil, Spray, Tube, Colourent do not have corresponding size blocks in your provided HTML.
+
+
+  //Tin
+ "Aarti Color" : document.getElementById("sizeBlockAarti Color"),
+  "Aarti White" : document.getElementById("sizeBlockAarti White"), // Corrected key to match HTML
+  "Hilti Screw" : document.getElementById("sizeBlockHilti Screw"),
+  "Maigra" : document.getElementById("sizeBlockMaigra"),
+  "Nails" : document.getElementById("sizeBlockNails"), 
+  "Tin Killa" : document.getElementById("sizeBlockTin Killa")
 };
 
 
@@ -135,7 +146,9 @@ const sizeBlocks = {
   WIRE        : document.getElementById("fittingBlockWIRE"),
   SWITCHBOARD : document.getElementById("fittingBlockSWITCHBOARD"),
   MODULAR     : document.getElementById("fittingBlockMODULAR"),
-  MCB         : document.getElementById("fittingBlockMCB") || null // (you don't have one now)
+  MCB         : document.getElementById("fittingBlockMCB"),
+  "Aarti Color" : document.getElementById("fittingBlockAarti Color"), // Corrected key to match HTML
+  "White Color" : document.getElementById("fittingBlockWhite Color") || null // (you don't have one now)
 };
 
   // ---------- STATE ----------
@@ -301,32 +314,45 @@ if (selectedCategory === "Plumbing") {
   materialBlockwiring.style.display = "none";
   materialBlockCEMENT.style.display = "none";
   materialBlockPAINT.style.display = "none";
+  materialBlockTIN.style.display = "none";
 } else if (selectedCategory === "Wiring") {
   materialBlockwiring.style.display = "block";
   materialBlockplumbing.style.display = "none";
   materialBlockTMT.style.display = "none";
   materialBlockCEMENT.style.display = "none";
   materialBlockPAINT.style.display = "none";
+  materialBlockTIN.style.display = "none";
 } else if (selectedCategory === "TMT") {
   materialBlockTMT.style.display = "block";
   materialBlockplumbing.style.display = "none";
   materialBlockwiring.style.display = "none";
   materialBlockCEMENT.style.display = "none";
   materialBlockPAINT.style.display = "none";
+  materialBlockTIN.style.display = "none";
 } else if (selectedCategory === "Cement") {
   materialBlockCEMENT.style.display = "block";
   materialBlockplumbing.style.display = "none";
   materialBlockwiring.style.display = "none";
   materialBlockTMT.style.display = "none";
   materialBlockPAINT.style.display = "none";
+  materialBlockTIN.style.display = "none";
 } else if (selectedCategory === "Paint") {
   materialBlockPAINT.style.display = "block";
   materialBlockplumbing.style.display = "none";
   materialBlockwiring.style.display = "none";
   materialBlockTMT.style.display = "none";
   materialBlockCEMENT.style.display = "none";
+  materialBlockTIN.style.display = "none";
+} else if (selectedCategory === "Tin") {
+  materialBlockTIN.style.display = "block";
+  materialBlockplumbing.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockTMT.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
 } else {
   materialBlockplumbing.style.display = "none";
+  materialBlockTIN.style.display = "none";
   materialBlockwiring.style.display = "none";
   materialBlockTMT.style.display = "none";
   materialBlockCEMENT.style.display = "none";
@@ -396,22 +422,37 @@ if (materialRowwiring) {
   });
 }
 
-// material PIcker for TMT
-if (materialRowTMT) {
-  materialRowTMT.addEventListener("click", (e) => {
+// ---------- MATERIAL PICKER (TIN) ----------
+if (materialRowTIN) {
+  materialRowTIN.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
 
-    activateSingle(chip, "#materialRowTMT .chip");
+    activateSingle(chip, "#materialRowTIN .chip");
 
-    selectedMaterial = (chip.dataset.mat || "").trim();
+    // raw -> canonical key
+    const raw = (chip.dataset.mat || "").trim();
+    // No canonical map for TIN, so use raw directly
+    selectedMaterial = raw;
 
     selectedSize = selectedFitting = null;
     hideAllSizeBlocks();
     hideAllFittingBlocks();
-    updateProductName();
 
-});
+    const sizeBlock = sizeBlocks[selectedMaterial];
+    const fittingBlock = fittingBlocks[selectedMaterial];
+
+    if (sizeBlock) {
+      show(sizeBlock);
+    }
+    if (fittingBlock) {
+      show(fittingBlock);
+    }
+
+    if (!sizeBlock && !fittingBlock) {
+      updateProductName();
+    }
+  });
 }
 // material PIcker for PAINT
 if (materialRowPAINT) {
@@ -457,10 +498,11 @@ if (materialRowCEMENT) {
 }
 
 
-  function show(sizeBlock, fittingBlock) {
-    if (sizeBlock) sizeBlock.style.display = "block";
-    if (fittingBlock) fittingBlock.style.display = "block";
-  }
+ 
+function show(sizeBlock, fittingBlock) {
+  if (sizeBlock) sizeBlock.style.display = "block";
+  if (fittingBlock) fittingBlock.style.display = "block";
+}
 
   // ---------- SIZE PICKERS ----------
   Object.values(sizeBlocks).forEach(block => {
