@@ -56,10 +56,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const materialBlockwiring  = document.getElementById("materialBlockwiring");
   const materialBlockCEMENT  = document.getElementById("materialBlockCEMENT");
   const materialBlockTMT  = document.getElementById("materialBlockTMT");
+  const materialBlockPAINT  = document.getElementById("materialBlockPAINT");
   const materialRowplumbing    = document.getElementById("materialRowplumbing");
   const materialRowwiring    = document.getElementById("materialRowwiring");
   const materialRowTMT    = document.getElementById("materialRowTMT");
   const materialRowCEMENT    = document.getElementById("materialRowCEMENT");
+  const materialRowPAINT    = document.getElementById("materialRowPAINT");
 
   // Size & fitting blocks (ids from your HTML)
   // Map raw HTML data-mat to canonical KEY we use in JS
@@ -78,30 +80,50 @@ const MATERIAL_CANON = {
   "gi-wire": "GI_WIRE" // you have it in HTML; add blocks if you need
 };
 
+
 const sizeBlocks = {
   // Plumbing
-  CPVC   : document.getElementById("sizeBlockCPVC"),
-  PVC    : document.getElementById("sizeBlockPVC"),
-  GI     : document.getElementById("sizeBlockGI"),
+  CPVC: document.getElementById("sizeBlockCPVC"),
+  PVC: document.getElementById("sizeBlockPVC"),
+  GI: document.getElementById("sizeBlockGI"),
   Passion: document.getElementById("sizeBlockPassion"),
-  Tank   : document.getElementById("sizeBlockTank"),
+  Tank: document.getElementById("sizeBlockTank"),
 
   // Wiring (canonical keys)
-  WIRE        : document.getElementById("sizeBlockWIRE"),
-  SWITCHBOARD : document.getElementById("sizeBlockSWITCHBOARD"),
-  MODULAR     : document.getElementById("sizeBlockMODULAR"),
-  BOX         : document.getElementById("sizeBlockBOX"),
-  MCB         : document.getElementById("sizeBlockMCB"),
-  MCB_BOX     : document.getElementById("sizeBlockMCB-BOX"),
-  PIPE        : document.getElementById("sizeBlockPIPE"),
-  WIRE_BEET   : document.getElementById("sizeBlockWIRE-BEET"),
-  SCREW       : document.getElementById("sizeBlockSCREW"),
-  SINGLE      : document.getElementById("sizeBlockSINGLE"),
-  FIBER_PLATE : document.getElementById("sizeBlockFIBER-PLATE"),
-  GI_WIRE     : null // add if you later create one
+  WIRE: document.getElementById("sizeBlockWIRE"),
+  SWITCHBOARD: document.getElementById("sizeBlockSWITCHBOARD"),
+  MODULAR: document.getElementById("sizeBlockMODULAR"),
+  BOX: document.getElementById("sizeBlockBOX"),
+  MCB: document.getElementById("sizeBlockMCB"),
+  "MCB-BOX": document.getElementById("sizeBlockMCB-BOX"), // Corrected key for MCB-BOX
+  PIPE: document.getElementById("sizeBlockPIPE"),
+  "WIRE-BEET": document.getElementById("sizeBlockWIRE-BEET"), // Corrected key for WIRE-BEET
+  SCREW: document.getElementById("sizeBlockSCREW"),
+  SINGLE: document.getElementById("sizeBlockSINGLE"),
+  "FIBER-PLATE": document.getElementById("sizeBlockFIBER-PLATE"), // Corrected key for FIBER-PLATE
 
-  
+  // PAINT
+  "Jenosolin": document.getElementById("sizeBlockJenosolin"),
+  "BP Exterior": document.getElementById("sizeBlockBP Exterior"),
+  "BP Interior": document.getElementById("sizeBlockBP Interior"),
+  "Exterior A-Guard Primer": document.getElementById("sizeBlockExterior A-Guard Primer"),
+  "All Guard": document.getElementById("sizeBlockAll Guard"),
+  "Walmasta": document.getElementById("sizeBlockWalmasta"),
+  "Silk": document.getElementById("sizeBlockSilk"),
+  "Easy Clean": document.getElementById("sizeBlockEasy Clean"),
+  "Bison": document.getElementById("sizeBlockBison"),
+  "Berger Gold": document.getElementById("sizeBlockBerger Gold"), // Assuming HTML ID is exactly "sizeBlockBerger Gold"
+  "Brolac": document.getElementById("sizeBlockBrolac"),
+  "Umbrella": document.getElementById("sizeBlockUmbrella"),
+  "Enamel": document.getElementById("sizeBlockEnamel"),
+  "Metal Primer": document.getElementById("sizeBlockMetal Primer"),
+  "Wood Primer": document.getElementById("sizeBlockWood Primer"),
+  "Brush": document.getElementById("sizeBlockBrush"),
+  "Roller": document.getElementById("sizeBlockRoller"),
+  "Putty": document.getElementById("sizeBlockPutty")
+  // Note: Tarpin Oil, Spray, Tube, Colourent do not have corresponding size blocks in your provided HTML.
 };
+
 
  const fittingBlocks = {
   // Plumbing
@@ -273,37 +295,44 @@ if (catRow) {
     hideAllFittingBlocks();
 
     // Show blocks based on category
-    if (selectedCategory === "Plumbing") {
-      materialBlockplumbing.style.display = "block";
-      materialBlockTMT.style.display = "none";
-      materialBlockwiring.style.display = "none";
-      materialBlockCEMENT.style.display = "none";
-    } 
-    else if (selectedCategory === "Wiring") {
-      materialBlockwiring.style.display = "block";
-      materialBlockplumbing.style.display = "none";
-      materialBlockTMT.style.display = "none";
-      materialBlockCEMENT.style.display = "none";
-    } 
-    else if (selectedCategory === "TMT") {
-      materialBlockTMT.style.display = "block";
-      materialBlockplumbing.style.display = "none";
-      materialBlockwiring.style.display = "none";
-      materialBlockCEMENT.style.display = "none";
-    } 
-    else if (selectedCategory === "Cement") {
-      materialBlockCEMENT.style.display = "block";
-      materialBlockplumbing.style.display = "none";
-      materialBlockwiring.style.display = "none";
-      materialBlockTMT.style.display = "none";
-    } 
-    else {
-      materialBlockplumbing.style.display = "none";
-      materialBlockwiring.style.display = "none";
-      materialBlockTMT.style.display = "none";
-      materialBlockCEMENT.style.display = "none";
-      pushToActiveRow(selectedCategory); // put only the category name
-    }
+if (selectedCategory === "Plumbing") {
+  materialBlockplumbing.style.display = "block";
+  materialBlockTMT.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+} else if (selectedCategory === "Wiring") {
+  materialBlockwiring.style.display = "block";
+  materialBlockplumbing.style.display = "none";
+  materialBlockTMT.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+} else if (selectedCategory === "TMT") {
+  materialBlockTMT.style.display = "block";
+  materialBlockplumbing.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+} else if (selectedCategory === "Cement") {
+  materialBlockCEMENT.style.display = "block";
+  materialBlockplumbing.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockTMT.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+} else if (selectedCategory === "Paint") {
+  materialBlockPAINT.style.display = "block";
+  materialBlockplumbing.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockTMT.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
+} else {
+  materialBlockplumbing.style.display = "none";
+  materialBlockwiring.style.display = "none";
+  materialBlockTMT.style.display = "none";
+  materialBlockCEMENT.style.display = "none";
+  materialBlockPAINT.style.display = "none";
+  pushToActiveRow(selectedCategory); // put only the category name
+}
   });
 }
 
@@ -383,6 +412,30 @@ if (materialRowTMT) {
     updateProductName();
 
 });
+}
+// material PIcker for PAINT
+if (materialRowPAINT) {
+  materialRowPAINT.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+
+    activateSingle(chip, "#materialRowPAINT .chip");
+
+    selectedMaterial = (chip.dataset.mat || "").trim();
+
+    // Hide all size and fitting blocks first
+    hideAllSizeBlocks();
+    hideAllFittingBlocks();
+
+    // Display the size block for the selected paint material
+    const sizeBlockToShow = sizeBlocks[selectedMaterial];
+    if (sizeBlockToShow) {
+      sizeBlockToShow.style.display = "block";
+    }
+
+    selectedSize = selectedFitting = null; // Reset size and fitting when material changes
+    updateProductName();
+  });
 }
 
 // material PIcker for CEMENT
