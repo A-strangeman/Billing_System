@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const materialBlockPAINT = document.getElementById("materialBlockPAINT");
     const materialBlockTIN = document.getElementById("materialBlockTIN");
     const materialBlockPLY = document.getElementById("materialBlockPLY");
+    const materialBlockTILE = document.getElementById("materialBlockTILE");
     const materialRowplumbing = document.getElementById("materialRowplumbing");
     const materialRowwiring = document.getElementById("materialRowwiring");
     const materialRowTMT = document.getElementById("materialRowTMT");
@@ -71,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const materialRowPAINT = document.getElementById("materialRowPAINT");
     const materialRowTIN = document.getElementById("materialRowTIN");
     const materialRowPLY = document.getElementById("materialRowPLY");
+    const materialRowTILE = document.getElementById("materialRowTILE");
 
     // Size & fitting blocks (ids from your HTML)
     // Map raw HTML data-mat to canonical KEY we use in JS
@@ -357,6 +359,7 @@ if (catRow) {
     materialBlockwiring.style.display = "none";
     materialBlockCEMENT.style.display = "none";
     materialBlockTMT.style.display = "none";
+    materialBlockTILE.style.display = "none";
     materialBlockPAINT.style.display = "none";
     materialBlockTIN.style.display = "none";
     materialBlockPLY.style.display = "none";
@@ -387,6 +390,9 @@ if (catRow) {
         break;
       case "Ply":
         materialBlockPLY.style.display = "block";
+        break;
+      case "Tile":
+        materialBlockTILE.style.display = "block";
         break;
       default:
         pushToActiveRow(selectedCategory); // put only the category name
@@ -525,6 +531,29 @@ if (catRow) {
             if (!chip) return;
 
             activateSingle(chip, "#materialRowPAINT .chip");
+
+            selectedMaterial = (chip.dataset.mat || "").trim();
+
+            hideAllSizeBlocks();
+            hideAllFittingBlocks();
+
+            const sizeBlockToShow = sizeBlocks[selectedMaterial];
+            if (sizeBlockToShow) {
+                sizeBlockToShow.style.display = "block";
+            }
+
+            selectedSize = selectedFitting = null;
+            updateProductName();
+        });
+    }
+
+    // material PIcker for Tile
+    if (materialRowTILE) {
+        materialRowTILE.addEventListener("click", (e) => {
+            const chip = e.target.closest(".chip");
+            if (!chip) return;
+
+            activateSingle(chip, "#materialRowTILE .chip");
 
             selectedMaterial = (chip.dataset.mat || "").trim();
 
@@ -806,7 +835,7 @@ if (catRow) {
             align: "right"
         });
 
-        const fileName = `${estimateNo.value && customerNameEl.value || "Bill"}.pdf`;
+        const fileName = `${estimateNo} - ${customerNameEl.value}.pdf`;
         doc.save(fileName);
     }
 
