@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Bills</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <h2 class="company-title">ABC Company</h2>
+      <ul class="menu">
+        <li><a href="make_bill.html">Make a New Bill</a></li>
+        <li id="edit_bill_link" class="active"><a href="edit_bill.html">Edit a Bill</a></li>
+        <li><a href="#">Report</a></li>
+        <li><a href="#">Check Ledger</a></li>
+        <li><a href="#">Add Purchase</a></li>
+      </ul>
+    </aside>
+
+    <main class="content">
+      <header>
+        <h1>Saved Bills</h1>
+        <button id="logoutBtn">Logout</button>
+      </header>
+      <section class="info">
+        <p>Here is a list of your saved bills. Click on one to view or edit it.</p>
+        <div id="billListContainer">
+          <ul id="billList">
+            </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="Billing.js"></script>
+</body>
+</html>

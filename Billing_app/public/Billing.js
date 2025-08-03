@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    // Corrected: Save the userId upon successful login
+                    localStorage.setItem("currentUserId", data.userId);
                     window.location.href = "welcome.html";
                 } else {
                     alert(data.message || "Login failed");
@@ -34,12 +36,85 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Server error. Try again later.");
             }
         });
-
         return; // Stop further billing code if we're on login page
     }
-    // ---------- ELEMENTS ----------
+
+    // -------------------------
+    // Logic for the edit_bill.html page
+    // -------------------------
+    if (window.location.pathname.endsWith("edit_bill.html")) {
+        const billList = document.getElementById("billList");
+        const userId = localStorage.getItem("currentUserId");
+
+        if (!userId) {
+            billList.innerHTML = "<li>Please log in to view your bills.</li>";
+            return;
+        }
+
+        // Corrected: Use a GET request with the userId as a URL query parameter
+        fetch(`/api/get-bills?userId=${userId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(bills => {
+                if (bills.length === 0) {
+                    billList.innerHTML = "<li>No bills found for this user.</li>";
+                } else {
+                    bills.forEach(bill => {
+                        const li = document.createElement("li");
+                        // Corrected: Add the bill actions and class names
+                        li.innerHTML = `
+                            Bill No: <span class="bill-no">${bill.estimateNo}</span> - Customer: ${bill.customerName}
+                            <div class="bill-actions">
+                                <button class="edit-btn">Edit</button>
+                                <button class="delete-btn">Delete</button>
+                            </div>
+                        `;
+                        li.classList.add("bill-item");
+                        li.dataset.bill = JSON.stringify(bill);
+                        billList.appendChild(li);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching bills:", error);
+                billList.innerHTML = "<li>Error loading bills. Please check your network and try again.</li>";
+            });
+
+        // Corrected: Handle clicks on the bill list
+        billList.addEventListener("click", (e) => {
+            const clickedItem = e.target.closest(".bill-item");
+            if (!clickedItem) return;
+
+            document.querySelectorAll(".bill-item").forEach(item => {
+                if (item !== clickedItem) {
+                    item.classList.remove("active");
+                }
+            });
+
+            clickedItem.classList.toggle("active");
+
+            if (e.target.classList.contains("edit-btn")) {
+                const billToEdit = JSON.parse(clickedItem.dataset.bill);
+                localStorage.setItem("billToEdit", JSON.stringify(billToEdit));
+                window.location.href = "make_bill.html";
+            } else if (e.target.classList.contains("delete-btn")) {
+                if (confirm(`Are you sure you want to delete bill ${clickedItem.querySelector('.bill-no').textContent}?`)) {
+                    // This is a placeholder for your API call to delete the bill
+                    console.log(`Deleting bill: ${clickedItem.dataset.bill}`);
+                    clickedItem.remove();
+                }
+            }
+        });
+        return;
+    }
+
+    // ---------- ELEMENTS FOR make_bill.html ----------
     const billTable = document.getElementById("billTable");
-    if (!billTable) return;
+    if (!billTable) return; // Exit if not on the make_bill page
 
     const tbody = billTable.querySelector("tbody");
     const billDateEl = document.getElementById("billDate");
@@ -63,113 +138,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const materialBlockTMT = document.getElementById("materialBlockTMT");
     const materialBlockPAINT = document.getElementById("materialBlockPAINT");
     const materialBlockTIN = document.getElementById("materialBlockTIN");
+    const materialBlockDOOR = document.getElementById("materialBlockDOOR");
     const materialBlockPLY = document.getElementById("materialBlockPLY");
     const materialBlockTILE = document.getElementById("materialBlockTILE");
+    const materialBlockPIPE = document.getElementById("materialBlockPIPE");
     const materialRowplumbing = document.getElementById("materialRowplumbing");
     const materialRowwiring = document.getElementById("materialRowwiring");
     const materialRowTMT = document.getElementById("materialRowTMT");
+    const materialRowDOOR = document.getElementById("materialRowDOOR");
     const materialRowCEMENT = document.getElementById("materialRowCEMENT");
     const materialRowPAINT = document.getElementById("materialRowPAINT");
     const materialRowTIN = document.getElementById("materialRowTIN");
     const materialRowPLY = document.getElementById("materialRowPLY");
     const materialRowTILE = document.getElementById("materialRowTILE");
+    const materialRowPIPE = document.getElementById("materialRowPIPE");
 
-    // Size & fitting blocks (ids from your HTML)
-    // Map raw HTML data-mat to canonical KEY we use in JS
     const MATERIAL_CANON = {
-        "wire": "WIRE",
-        "switch board": "SWITCHBOARD",
-        "single": "SINGLE",
-        "modular": "MODULAR",
-        "box": "BOX",
-        "mcb": "MCB",
-        "mcb-box": "MCB_BOX",
-        "pipe": "PIPE",
-        "screw": "SCREW",
-        "fiber-plate": "FIBER_PLATE",
-        "wire beet": "WIRE_BEET",
-        "gi-wire": "GI_WIRE"
+        "wire": "WIRE", "switch board": "SWITCHBOARD", "single": "SINGLE", "modular": "MODULAR",
+        "box": "BOX", "mcb": "MCB", "mcb-box": "MCB_BOX", "pipe": "PIPE", "screw": "SCREW",
+        "fiber-plate": "FIBER_PLATE", "wire beet": "WIRE_BEET", "gi-wire": "GI_WIRE"
     };
 
     const sizeBlocks = {
-        // Plumbing
-        CPVC: document.getElementById("sizeBlockCPVC"),
-        PVC: document.getElementById("sizeBlockPVC"),
-        GI: document.getElementById("sizeBlockGI"),
-        Passion: document.getElementById("sizeBlockPassion"),
-        Tank: document.getElementById("sizeBlockTank"),
-
-        // Wiring (canonical keys)
-        WIRE: document.getElementById("sizeBlockWIRE"),
-        SWITCHBOARD: document.getElementById("sizeBlockSWITCHBOARD"),
-        MODULAR: document.getElementById("sizeBlockMODULAR"),
-        BOX: document.getElementById("sizeBlockBOX"),
-        MCB: document.getElementById("sizeBlockMCB"),
-        "MCB-BOX": document.getElementById("sizeBlockMCB-BOX"),
-        PIPE: document.getElementById("sizeBlockPIPE"),
-        "WIRE-BEET": document.getElementById("sizeBlockWIRE-BEET"),
-        SCREW: document.getElementById("sizeBlockSCREW"),
-        SINGLE: document.getElementById("sizeBlockSINGLE"),
-        "FIBER-PLATE": document.getElementById("sizeBlockFIBER-PLATE"),
-
-        // PAINT
-        "Jenosolin": document.getElementById("sizeBlockJenosolin"),
-        "BP Exterior": document.getElementById("sizeBlockBP Exterior"),
-        "BP Interior": document.getElementById("sizeBlockBP Interior"),
-        "Exterior A-Guard Primer": document.getElementById("sizeBlockExterior A-Guard Primer"),
-        "All Guard": document.getElementById("sizeBlockAll Guard"),
-        "Walmasta": document.getElementById("sizeBlockWalmasta"),
-        "Silk": document.getElementById("sizeBlockSilk"),
-        "Easy Clean": document.getElementById("sizeBlockEasy Clean"),
-        "Bison": document.getElementById("sizeBlockBison"),
-        "Berger Gold": document.getElementById("sizeBlockBerger Gold"),
-        "Brolac": document.getElementById("sizeBlockBrolac"),
-        "Umbrella": document.getElementById("sizeBlockUmbrella"),
-        "Enamel": document.getElementById("sizeBlockEnamel"),
-        "Metal Primer": document.getElementById("sizeBlockMetal Primer"),
-        "Wood Primer": document.getElementById("sizeBlockWood Primer"),
-        "Brush": document.getElementById("sizeBlockBrush"),
-        "Roller": document.getElementById("sizeBlockRoller"),
-        "Putty": document.getElementById("sizeBlockPutty"),
-
-
-        //Tin
-        "Aarti Color": document.getElementById("sizeBlockAarti Color"),
-        "Aarti White": document.getElementById("sizeBlockAarti White"),
-        "Hilti Screw": document.getElementById("sizeBlockHilti Screw"),
-        "Maigra": document.getElementById("sizeBlockMaigra"),
-        "Nails": document.getElementById("sizeBlockNails"),
-        "Tin Killa": document.getElementById("sizeBlockTin Killa"),
-
-        //PLY
-        "18mm": document.getElementById("sizeBlock18mm"),
-        "12mm": document.getElementById("sizeBlock12mm"),
-        "10mm": document.getElementById("sizeBlock10mm"),
-        "6mm": document.getElementById("sizeBlock6mm"),
-        "Fevicol": document.getElementById("sizeBlockFevicol"),
-        "Heatex": document.getElementById("sizeBlockHeatex"),
-        "Beet": document.getElementById("sizeBlockBeet")
+        CPVC: document.getElementById("sizeBlockCPVC"), PVC: document.getElementById("sizeBlockPVC"), GI: document.getElementById("sizeBlockGI"),
+        Passion: document.getElementById("sizeBlockPassion"), Tank: document.getElementById("sizeBlockTank"), Black: document.getElementById("sizeBlockBlack"),
+        WIRE: document.getElementById("sizeBlockWIRE"), SWITCHBOARD: document.getElementById("sizeBlockSWITCHBOARD"), MODULAR: document.getElementById("sizeBlockMODULAR"),
+        BOX: document.getElementById("sizeBlockBOX"), MCB: document.getElementById("sizeBlockMCB"), "MCB-BOX": document.getElementById("sizeBlockMCB-BOX"),
+        PIPE: document.getElementById("sizeBlockPIPE"), "WIRE-BEET": document.getElementById("sizeBlockWIRE-BEET"), SCREW: document.getElementById("sizeBlockSCREW"),
+        SINGLE: document.getElementById("sizeBlockSINGLE"), "FIBER-PLATE": document.getElementById("sizeBlockFIBER-PLATE"), "Jenosolin": document.getElementById("sizeBlockJenosolin"),
+        "BP Exterior": document.getElementById("sizeBlockBP Exterior"), "BP Interior": document.getElementById("sizeBlockBP Interior"), "Exterior A-Guard Primer": document.getElementById("sizeBlockExterior A-Guard Primer"),
+        "All Guard": document.getElementById("sizeBlockAll Guard"), "Walmasta": document.getElementById("sizeBlockWalmasta"), "Silk": document.getElementById("sizeBlockSilk"),
+        "Easy Clean": document.getElementById("sizeBlockEasy Clean"), "Bison": document.getElementById("sizeBlockBison"), "Berger Gold": document.getElementById("sizeBlockBerger Gold"),
+        "Brolac": document.getElementById("sizeBlockBrolac"), "Umbrella": document.getElementById("sizeBlockUmbrella"), "Enamel": document.getElementById("sizeBlockEnamel"),
+        "Metal Primer": document.getElementById("sizeBlockMetal Primer"), "Wood Primer": document.getElementById("sizeBlockWood Primer"), "Brush": document.getElementById("sizeBlockBrush"),
+        "Roller": document.getElementById("sizeBlockRoller"), "Putty": document.getElementById("sizeBlockPutty"), "Aarti Color": document.getElementById("sizeBlockAarti Color"),
+        "Aarti White": document.getElementById("sizeBlockAarti White"), "Hilti Screw": document.getElementById("sizeBlockHilti Screw"), "Maigra": document.getElementById("sizeBlockMaigra"),
+        "Nails": document.getElementById("sizeBlockNails"), "Tin Killa": document.getElementById("sizeBlockTin Killa"), "18mm": document.getElementById("sizeBlock18mm"),
+        "12mm": document.getElementById("sizeBlock12mm"), "10mm": document.getElementById("sizeBlock10mm"), "6mm": document.getElementById("sizeBlock6mm"),
+        "Fevicol": document.getElementById("sizeBlockFevicol"), "Heatex": document.getElementById("sizeBlockHeatex"), "Beet": document.getElementById("sizeBlockBeet"),
+        "25 Digital": document.getElementById("sizeBlock25 Digital"), "32 Digital": document.getElementById("sizeBlock32 Digital"), "25 PVC": document.getElementById("sizeBlock25 PVC"),
+        "32 PVC": document.getElementById("sizeBlock32 PVC"), "Tank": document.getElementById("sizeBlockTank")
     };
 
-
     const fittingBlocks = {
-        // Plumbing
-        CPVC: document.getElementById("fittingBlockCPVC"),
-        PVC: document.getElementById("fittingBlockPVC"),
-        GI: document.getElementById("fittingBlockGI"),
-
-        // Wiring
-        WIRE: document.getElementById("fittingBlockWIRE"),
-        SWITCHBOARD: document.getElementById("fittingBlockSWITCHBOARD"),
-        MODULAR: document.getElementById("fittingBlockMODULAR"),
-        MCB: document.getElementById("fittingBlockMCB"),
-        "Aarti Color": document.getElementById("fittingBlockAarti Color"),
-        "White Color": document.getElementById("fittingBlockWhite Color"),
-        "18mm": document.getElementById("fittingBlock18mm"),
-        "12mm": document.getElementById("fittingBlock12mm"),
-        "10mm": document.getElementById("fittingBlock10mm"),
-        "6mm": document.getElementById("fittingBlock6mm"),
-        "Beet": document.getElementById("fittingBlockBeet") || null
+        CPVC: document.getElementById("fittingBlockCPVC"), PVC: document.getElementById("fittingBlockPVC"), GI: document.getElementById("fittingBlockGI"),
+        Black: document.getElementById("fittingBlockBlack"), WIRE: document.getElementById("fittingBlockWIRE"), SWITCHBOARD: document.getElementById("fittingBlockSWITCHBOARD"),
+        MODULAR: document.getElementById("fittingBlockMODULAR"), MCB: document.getElementById("fittingBlockMCB"), "Aarti Color": document.getElementById("fittingBlockAarti Color"),
+        "Aarti White": document.getElementById("fittingBlockAarti White"), "18mm": document.getElementById("fittingBlock18mm"), "12mm": document.getElementById("fittingBlock12mm"),
+        "10mm": document.getElementById("fittingBlock10mm"), "6mm": document.getElementById("fittingBlock6mm"), "Beet": document.getElementById("fittingBlockBeet") || null
     };
 
     // ---------- STATE ----------
@@ -179,79 +195,177 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedMaterial = null;
     let selectedSize = null;
     let selectedFitting = null;
-
     let plyLength = null;
     let plyWidth = null;
     let plyCount = null;
 
     // ---------- INIT ----------
-    billDateEl.value = new Date().toISOString().split("T")[0];
+ // Billing.js
+// ... (previous code)
 
+    // ---------- INIT ----------
+    // This is the key section that loads the bill data
+    const savedBill = JSON.parse(localStorage.getItem("billToEdit"));
+    if (savedBill) {
+        // Corrected: Load the saved bill data
+        estimateNoEl.value = savedBill.estimateNo;
+        customerNameEl.value = savedBill.customerName;
+        customerPhoneEl.value = savedBill.customerPhone;
+        billDateEl.value = savedBill.billDate;
+        discountEl.value = savedBill.discount;
+        receivedEl.value = savedBill.received;
+
+        // Populate the table rows
+        savedBill.items.forEach(item => {
+            addRow(item.product, item.qty, item.unit, item.price);
+        });
+
+        // Clear the stored bill so it's not loaded again on refresh
+        localStorage.removeItem("billToEdit");
+    } else {
+        // This is the code that is being executed, leading to a blank form
+        // and likely the "Choose a category..." message
+        billDateEl.value = new Date().toISOString().split("T")[0];
+        addRow();
+        let lastEstimate = parseInt(localStorage.getItem("lastEstimateNo") || "0", 10);
+        lastEstimate++;
+        localStorage.setItem("lastEstimateNo", lastEstimate);
+        estimateNoEl.value = lastEstimate;
+    }
+
+
+
+    // --- `saveAndDownloadBill` FUNCTION & HELPER ---
+    function getBillData() {
+        const tableData = [];
+        tbody.querySelectorAll("tr").forEach(tr => {
+            const product = tr.querySelector(".product").value || "";
+            const unit = tr.querySelector(".unit").value || "";
+            const qty = parseFloat(tr.querySelector(".qty").value || 0);
+            const price = parseFloat(tr.querySelector(".price").value || 0);
+            const rowTotal = qty * price;
+            tableData.push({ product, unit, qty, price, rowTotal });
+        });
+        return {
+            estimateNo: estimateNoEl.value,
+            customerName: customerNameEl.value,
+            customerPhone: customerPhoneEl.value,
+            billDate: billDateEl.value,
+            items: tableData,
+            subTotal: parseFloat(subTotalEl.value),
+            discount: parseFloat(discountEl.value),
+            grandTotal: parseFloat(grandTotalEl.value),
+            received: parseFloat(receivedEl.value),
+            balance: parseFloat(balanceEl.value),
+            amountWords: amountWordsEl ? amountWordsEl.value : ""
+        };
+    }
+
+    async function saveAndDownloadBill() {
+        const billData = getBillData();
+        const userId = localStorage.getItem("currentUserId");
+
+        if (!userId) {
+            alert("Please log in to save a bill.");
+            return;
+        }
+
+        try {
+            // Corrected: Send the userId to the server along with the bill data
+            const response = await fetch('/api/save-bill', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ...billData,
+                    userId
+                }),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server responded with an error: ${response.status} - ${errorText}`);
+            }
+            console.log('Bill saved successfully on the server.');
+        } catch (error) {
+            console.error('Error saving bill:', error);
+            alert('An error occurred while saving the bill. The PDF will still be generated.');
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("p", "pt", "a4");
+
+        const companyName = "ABC Company";
+        const companyPhone = "Phone: 9825333385";
+        const estimateNo = billData.estimateNo || "-";
+        const date = billData.billDate || "-";
+        const cust = billData.customerName || "-";
+        const phone = billData.customerPhone || "-";
+        const subTotal = billData.subTotal.toFixed(2) || "0.00";
+        const discount = billData.discount.toFixed(2) || "0.00";
+        const grandTotal = billData.grandTotal.toFixed(2) || "0.00";
+        const received = billData.received.toFixed(2) || "0.00";
+        const balance = billData.balance.toFixed(2) || "0.00";
+        const amountWords = billData.amountWords || "";
+
+        doc.setFontSize(16);
+        doc.text("Estimated Bill", 297.5, 30, { align: "center" });
+
+        // ... Add all your PDF generation code here
+        doc.save(`Bill_${estimateNo}.pdf`);
+    }
+
+    // --- EVENT LISTENERS ---
     addRowBtn.addEventListener("click", () => addRow());
     discountEl.addEventListener("input", computeTotals);
     receivedEl.addEventListener("input", computeTotals);
-    downloadBtn.addEventListener("click", downloadPDF);
 
-    addRow();
+    if (downloadBtn) {
+        downloadBtn.addEventListener("click", saveAndDownloadBill);
+    }
     computeTotals();
 
     // ---------- TABLE ----------
-    function addRow(product = "") {
+    function addRow(product = "", qty = "", unit = "Pcs", price = "") {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-      <td class="sn"></td>
-      <td><input type="text" class="product" value="${product}"></td>
-      <td><input type="number" class="qty" min="1" value=""></td>
-      <td>
-        <select class="unit">
-          <option value="Pcs" selected>Pcs</option>
-          <option value="Kg">Kg</option>
-          <option value="Sq-Ft">Sq-Ft</option>
-          <option value="Pkts">Pkts</option>
-          <option value="Mtr">Mtr</option>
-          <option value="Bundle">Bundle</option>
-          <option value="ft">ft</option>
-        </select>
-      </td>
-      <td><input type="number" class="price" min="0" value=""></td>
-      <td class="row-total">0.00</td>
-      <td><button class="del">❌</button></td>
-    `;
+          <td class="sn"></td>
+          <td><input type="text" class="product" value="${product}"></td>
+          <td><input type="number" class="qty" min="1" value="${qty}"></td>
+          <td>
+            <select class="unit">
+              <option value="Pcs">Pcs</option>
+              <option value="Kg">Kg</option>
+              <option value="Sq-Ft">Sq-Ft</option>
+              <option value="Pkts">Pkts</option>
+              <option value="Mtr">Mtr</option>
+              <option value="Bundle">Bundle</option>
+              <option value="ft">ft</option>
+            </select>
+          </td>
+          <td><input type="number" class="price" min="0" value="${price}"></td>
+          <td class="row-total">0.00</td>
+          <td><button class="del">❌</button></td>
+        `;
         tbody.appendChild(tr);
         renumber();
 
         const productInput = tr.querySelector(".product");
         const qtyInput = tr.querySelector(".qty");
         const priceInput = tr.querySelector(".price");
+        const unitSelect = tr.querySelector(".unit");
 
-        // Move focus on Enter
+        if (unit) {
+            unitSelect.value = unit;
+        }
+
         productInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                qtyInput.focus();
-            }
+            if (e.key === "Enter") { e.preventDefault(); qtyInput.focus(); }
         });
-
         qtyInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                priceInput.focus();
-            }
+            if (e.key === "Enter") { e.preventDefault(); priceInput.focus(); }
         });
-
         priceInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                addRow();
-                setTimeout(() => {
-                    const rows = tbody.querySelectorAll("tr");
-                    const lastRow = rows[rows.length - 1];
-                    if (lastRow) {
-                        const productField = lastRow.querySelector(".product");
-                        if (productField) productField.focus();
-                    }
-                }, 0);
-            }
+            if (e.key === "Enter") { e.preventDefault(); addRow(); setTimeout(() => { const rows = tbody.querySelectorAll("tr"); const lastRow = rows[rows.length - 1]; if (lastRow) { const productField = lastRow.querySelector(".product"); if (productField) productField.focus(); } }, 0); }
         });
 
         qtyInput.addEventListener("input", computeTotals);
@@ -262,12 +376,10 @@ document.addEventListener("DOMContentLoaded", () => {
             computeTotals();
             if (activeRow === tr) activeRow = null;
         });
-
         tr.addEventListener("click", () => setActiveRow(tr));
         setActiveRow(tr);
         computeTotals();
     }
-
 
     function renumber() {
         sn = 1;
@@ -281,7 +393,7 @@ document.addEventListener("DOMContentLoaded", () => {
         activeRow = tr;
         if (activeRow) activeRow.classList.add("active");
     }
-    // Auto-increment Estimate No
+
     function getNextEstimateNo() {
         let lastEstimate = parseInt(localStorage.getItem("lastEstimateNo") || "0", 10);
         lastEstimate++;
@@ -289,7 +401,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return lastEstimate;
     }
 
-    // Set initial Estimate No if field is empty
     if (estimateNoEl && !estimateNoEl.value) {
         estimateNoEl.value = getNextEstimateNo();
     }
@@ -298,10 +409,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!activeRow || selectedCategory !== "Ply") {
             return;
         }
-
         const qtyInput = activeRow.querySelector(".qty");
         const unitSelect = activeRow.querySelector(".unit");
-
         if (plyLength && plyWidth && plyCount) {
             const totalUnits = plyLength * plyWidth * plyCount;
             qtyInput.value = totalUnits;
@@ -309,10 +418,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             qtyInput.value = 1;
         }
-
         computeTotals();
     }
-
 
     function computeTotals() {
         let subTotal = 0;
@@ -323,288 +430,211 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.querySelector(".row-total").textContent = rowTotal.toFixed(2);
             subTotal += rowTotal;
         });
-
         const discount = parseFloat(discountEl.value) || 0;
         const received = parseFloat(receivedEl.value) || 0;
         const grandTotal = Math.max(subTotal - discount, 0);
         const balance = Math.max(grandTotal - received, 0);
-
         subTotalEl.value = subTotal.toFixed(2);
         grandTotalEl.value = grandTotal.toFixed(2);
         balanceEl.value = balance.toFixed(2);
-
         if (amountWordsEl) {
             amountWordsEl.value = numberToWordsIndian(Math.round(grandTotal)) + " only";
         }
     }
 
-    // ---------- CATEGORY PICKER ----------
-// ... (rest of your code)
-
-// ---------- CATEGORY PICKER ----------
-if (catRow) {
-  catRow.addEventListener("click", (e) => {
-    const chip = e.target.closest(".chip");
-    if (!chip) return;
-
-    activateSingle(chip, "#catRow .chip");
-    selectedCategory = chip.dataset.cat;
-
-    // Reset plumbing & wiring fields
-    selectedMaterial = selectedSize = selectedFitting = null;
-
-    // A much cleaner way to handle showing/hiding blocks:
-    // First, hide all material blocks
-    materialBlockplumbing.style.display = "none";
-    materialBlockwiring.style.display = "none";
-    materialBlockCEMENT.style.display = "none";
-    materialBlockTMT.style.display = "none";
-    materialBlockTILE.style.display = "none";
-    materialBlockPAINT.style.display = "none";
-    materialBlockTIN.style.display = "none";
-    materialBlockPLY.style.display = "none";
-    
-    // Then, hide all size and fitting blocks
-    hideAllSizeBlocks();
-    hideAllFittingBlocks();
-
-    // Now, show the correct material block based on the selected category
-    switch (selectedCategory) {
-      case "Plumbing":
-        materialBlockplumbing.style.display = "block";
-        break;
-      case "Wiring":
-        materialBlockwiring.style.display = "block";
-        break;
-      case "TMT":
-        materialBlockTMT.style.display = "block";
-        break;
-      case "Cement":
-        materialBlockCEMENT.style.display = "block";
-        break;
-      case "Paint":
-        materialBlockPAINT.style.display = "block";
-        break;
-      case "Tin":
-        materialBlockTIN.style.display = "block";
-        break;
-      case "Ply":
-        materialBlockPLY.style.display = "block";
-        break;
-      case "Tile":
-        materialBlockTILE.style.display = "block";
-        break;
-      default:
-        pushToActiveRow(selectedCategory); // put only the category name
-        break;
+    if (catRow) {
+        catRow.addEventListener("click", (e) => {
+            const chip = e.target.closest(".chip");
+            if (!chip) return;
+            activateSingle(chip, "#catRow .chip");
+            selectedCategory = chip.dataset.cat;
+            selectedMaterial = selectedSize = selectedFitting = null;
+            materialBlockplumbing.style.display = "none";
+            materialBlockwiring.style.display = "none";
+            materialBlockCEMENT.style.display = "none";
+            materialBlockDOOR.style.display = "none";
+            materialBlockTMT.style.display = "none";
+            materialBlockTILE.style.display = "none";
+            materialBlockPAINT.style.display = "none";
+            materialBlockTIN.style.display = "none";
+            materialBlockPLY.style.display = "none";
+            materialBlockPIPE.style.display = "none";
+            hideAllSizeBlocks();
+            hideAllFittingBlocks();
+            switch (selectedCategory) {
+                case "Plumbing": materialBlockplumbing.style.display = "block"; break;
+                case "Wiring": materialBlockwiring.style.display = "block"; break;
+                case "TMT": materialBlockTMT.style.display = "block"; break;
+                case "Cement": materialBlockCEMENT.style.display = "block"; break;
+                case "Paint": materialBlockPAINT.style.display = "block"; break;
+                case "Tin": materialBlockTIN.style.display = "block"; break;
+                case "Ply": materialBlockPLY.style.display = "block"; break;
+                case "Door": materialBlockDOOR.style.display = "block"; break;
+                case "Tile": materialBlockTILE.style.display = "block"; break;
+                case "Pipe": materialBlockPIPE.style.display = "block"; break;
+                default: pushToActiveRow(selectedCategory); break;
+            }
+        });
     }
-  });
-}
 
-// ... (rest of your code)
-
-
-    // ---------- MATERIAL PICKER (Plumbing) ----------
     if (materialRowplumbing) {
         materialRowplumbing.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowplumbing .chip");
-
             selectedMaterial = (chip.dataset.mat || "").trim();
-
             selectedSize = selectedFitting = null;
             hideAllSizeBlocks();
             hideAllFittingBlocks();
-
-            if (selectedMaterial === "CPVC") {
-                show(sizeBlocks.CPVC, fittingBlocks.CPVC);
-            } else if (selectedMaterial === "PVC") {
-                show(sizeBlocks.PVC, fittingBlocks.PVC);
-            } else if (selectedMaterial === "GI") {
-                show(sizeBlocks.GI, fittingBlocks.GI);
-            } else if (selectedMaterial === "Passion") {
-                show(sizeBlocks.Passion, null);
-            } else if (selectedMaterial === "Tank") {
-                show(sizeBlocks.Tank, null);
-            } else {
-                updateProductName();
-            }
+            if (selectedMaterial === "CPVC") { show(sizeBlocks.CPVC, fittingBlocks.CPVC); } else if (selectedMaterial === "PVC") { show(sizeBlocks.PVC, fittingBlocks.PVC); } else if (selectedMaterial === "GI") { show(sizeBlocks.GI, fittingBlocks.GI); } else if (selectedMaterial === "Passion") { show(sizeBlocks.Passion, null); } else if (selectedMaterial === "Black") { show(sizeBlocks.Black, null); } else if (selectedMaterial === "Tank") { show(sizeBlocks.Tank, null); } else { updateProductName(); }
         });
     }
 
-    // ---------- MATERIAL PICKER (Wiring) ----------
     if (materialRowwiring) {
         materialRowwiring.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowwiring .chip");
-
             const raw = (chip.dataset.mat || "").trim().toLowerCase();
             const canon = MATERIAL_CANON[raw];
             selectedMaterial = canon || raw;
-
             selectedSize = selectedFitting = null;
             hideAllSizeBlocks();
             hideAllFittingBlocks();
-
             const sizeBlock = sizeBlocks[selectedMaterial];
             const fittingBlock = fittingBlocks[selectedMaterial];
-
-            if (sizeBlock || fittingBlock) {
-                show(sizeBlock, fittingBlock);
-            } else {
-                updateProductName();
-            }
+            if (sizeBlock || fittingBlock) { show(sizeBlock, fittingBlock); } else { updateProductName(); }
         });
     }
 
-
-    // --- MATERIAL PICKER (PLY) ---
     if (materialRowPLY) {
         materialRowPLY.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowPLY .chip");
             selectedMaterial = (chip.dataset.mat || "").trim();
-
             selectedSize = null;
             selectedFitting = null;
-            plyLength = null;
-            plyWidth = null;
-            plyCount = null;
-
-            hideAllSizeBlocks();
-            hideAllFittingBlocks();
-
+            plyLength = null; plyWidth = null; plyCount = null;
+            hideAllSizeBlocks(); hideAllFittingBlocks();
             const sizeBlockToShow = sizeBlocks[selectedMaterial];
             const fittingBlockToShow = fittingBlocks[selectedMaterial];
-
             if (sizeBlockToShow) sizeBlockToShow.style.display = "block";
             if (fittingBlockToShow) fittingBlockToShow.style.display = "block";
-
-            if (!sizeBlockToShow && !fittingBlockToShow) {
-                updateProductName();
-            }
+            if (!sizeBlockToShow && !fittingBlockToShow) { updateProductName(); }
         });
     }
 
-
-
-    // ---------- MATERIAL PICKER (TIN) ----------
     if (materialRowTIN) {
         materialRowTIN.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowTIN .chip");
-
             const raw = (chip.dataset.mat || "").trim();
             selectedMaterial = raw;
-
             selectedSize = selectedFitting = null;
-            hideAllSizeBlocks();
-            hideAllFittingBlocks();
-
+            hideAllSizeBlocks(); hideAllFittingBlocks();
             const sizeBlock = sizeBlocks[selectedMaterial];
             const fittingBlock = fittingBlocks[selectedMaterial];
-
-            if (sizeBlock) {
-                show(sizeBlock);
-            }
-            if (fittingBlock) {
-                show(fittingBlock);
-            }
-
-            if (!sizeBlock && !fittingBlock) {
-                updateProductName();
-            }
+            if (sizeBlock) { show(sizeBlock); }
+            if (fittingBlock) { show(fittingBlock); }
+            if (!sizeBlock && !fittingBlock) { updateProductName(); }
         });
     }
-    // material PIcker for PAINT
+
     if (materialRowPAINT) {
         materialRowPAINT.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowPAINT .chip");
-
             selectedMaterial = (chip.dataset.mat || "").trim();
-
-            hideAllSizeBlocks();
-            hideAllFittingBlocks();
-
+            hideAllSizeBlocks(); hideAllFittingBlocks();
             const sizeBlockToShow = sizeBlocks[selectedMaterial];
-            if (sizeBlockToShow) {
-                sizeBlockToShow.style.display = "block";
-            }
-
+            if (sizeBlockToShow) { sizeBlockToShow.style.display = "block"; }
             selectedSize = selectedFitting = null;
             updateProductName();
         });
     }
 
-    // material PIcker for Tile
+    if (materialRowDOOR) {
+        materialRowDOOR.addEventListener("click", (e) => {
+            const chip = e.target.closest(".chip");
+            if (!chip) return;
+            activateSingle(chip, "#materialRowDOOR .chip");
+            selectedMaterial = (chip.dataset.mat || "").trim();
+            hideAllSizeBlocks(); hideAllFittingBlocks();
+            const sizeBlockToShow = sizeBlocks[selectedMaterial];
+            if (sizeBlockToShow) { sizeBlockToShow.style.display = "block"; }
+            selectedSize = selectedFitting = null;
+            updateProductName();
+        });
+    }
+
+    if (materialRowPIPE) {
+        materialRowPIPE.addEventListener("click", (e) => {
+            const chip = e.target.closest(".chip");
+            if (!chip) return;
+            activateSingle(chip, "#materialRowPIPE .chip");
+            selectedMaterial = (chip.dataset.mat || "").trim();
+            hideAllSizeBlocks(); hideAllFittingBlocks();
+            const sizeBlockToShow = sizeBlocks[selectedMaterial];
+            if (sizeBlockToShow) { sizeBlockToShow.style.display = "block"; }
+            selectedSize = selectedFitting = null;
+            updateProductName();
+        });
+    }
+
     if (materialRowTILE) {
         materialRowTILE.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowTILE .chip");
-
             selectedMaterial = (chip.dataset.mat || "").trim();
-
-            hideAllSizeBlocks();
-            hideAllFittingBlocks();
-
+            hideAllSizeBlocks(); hideAllFittingBlocks();
             const sizeBlockToShow = sizeBlocks[selectedMaterial];
-            if (sizeBlockToShow) {
-                sizeBlockToShow.style.display = "block";
-            }
-
+            if (sizeBlockToShow) { sizeBlockToShow.style.display = "block"; }
             selectedSize = selectedFitting = null;
             updateProductName();
         });
     }
 
-    // material PIcker for CEMENT
     if (materialRowCEMENT) {
         materialRowCEMENT.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             activateSingle(chip, "#materialRowCEMENT .chip");
-
             selectedMaterial = (chip.dataset.mat || "").trim();
-
             selectedSize = selectedFitting = null;
-            hideAllSizeBlocks();
-            hideAllFittingBlocks();
+            hideAllSizeBlocks(); hideAllFittingBlocks();
             updateProductName();
         });
     }
 
-
+    if (materialRowTMT) {
+        materialRowTMT.addEventListener("click", (e) => {
+            const chip = e.target.closest(".chip");
+            if (!chip) return;
+            activateSingle(chip, "#materialRowTMT .chip");
+            selectedMaterial = (chip.dataset.mat || "").trim();
+            selectedSize = selectedFitting = null;
+            hideAllSizeBlocks(); hideAllFittingBlocks();
+            updateProductName();
+        });
+    }
 
     function show(sizeBlock, fittingBlock) {
         if (sizeBlock) sizeBlock.style.display = "block";
         if (fittingBlock) fittingBlock.style.display = "block";
     }
 
-    // ---------- SIZE PICKERS ----------
     Object.values(sizeBlocks).forEach(block => {
         if (!block) return;
         block.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             block.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
             chip.classList.add("active");
             selectedSize = chip.dataset.size;
-
             if (selectedCategory === "Ply") {
                 const dimensions = selectedSize.match(/\d+/g);
                 if (dimensions && dimensions.length === 2) {
@@ -620,17 +650,14 @@ if (catRow) {
         });
     });
 
-    // ---------- FITTING PICKERS ----------
     Object.values(fittingBlocks).forEach(block => {
         if (!block) return;
         block.addEventListener("click", (e) => {
             const chip = e.target.closest(".chip");
             if (!chip) return;
-
             block.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
             chip.classList.add("active");
             selectedFitting = chip.dataset.fit;
-
             if (selectedCategory === "Ply") {
                 if (chip.closest('[id^="fittingBlock"][id$="mm"]')) {
                     plyCount = parseInt(selectedFitting);
@@ -640,7 +667,6 @@ if (catRow) {
             updateProductName();
         });
     });
-
 
     function hideAllSizeBlocks() {
         Object.values(sizeBlocks).forEach(block => block && (block.style.display = "none"));
@@ -655,33 +681,35 @@ if (catRow) {
         chip.classList.add("active");
     }
 
-   function updateProductName() {
-    if (!activeRow) return;
-    const parts = [];
-    if (selectedMaterial) parts.push(selectedMaterial);
-    if (selectedSize) parts.push(selectedSize);
-    if (selectedFitting) parts.push(selectedFitting);
+    function updateProductName() {
+        if (!activeRow) return;
+        const parts = [];
+        if (selectedMaterial) parts.push(selectedMaterial);
+        if (selectedSize) parts.push(selectedSize);
+        if (selectedFitting) parts.push(selectedFitting);
 
-    if (parts.length === 0 && selectedCategory) parts.push(selectedCategory);
+        if (parts.length === 0 && selectedCategory) parts.push(selectedCategory);
 
-    const productInput = activeRow.querySelector(".product");
-    productInput.value = parts.join(" ");
+        const productInput = activeRow.querySelector(".product");
+        productInput.value = parts.join(" ");
 
-    // Corrected logic: Call the calculation function here
-    if (selectedCategory === "Ply") {
-        calculatePlyUnits();
-    } else {
-        const qtyInput = activeRow.querySelector(".qty");
-        qtyInput.focus();
+        if (selectedCategory === "Ply") {
+            calculatePlyUnits();
+        } else {
+            const qtyInput = activeRow.querySelector(".qty");
+            qtyInput.focus();
+        }
     }
-}
 
     function pushToActiveRow(text) {
         if (!activeRow) return;
-
         const productInput = activeRow.querySelector(".product");
-        productInput.value = text || "";
+        productInput.value = text;
+        const qtyInput = activeRow.querySelector(".qty");
+        qtyInput.focus();
     }
+
+
 
 
     // ---------- PDF ----------

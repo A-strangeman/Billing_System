@@ -1,0 +1,67 @@
+[
+  {
+    "estimateNo": "23",
+    "customerName": "khursid",
+    "customerPhone": "982344434",
+    "billDate": "2025-08-03",
+    "items": [
+      {
+        "product": "20mm NS White",
+        "unit": "Kg",
+        "qty": 23,
+        "price": 280,
+        "rowTotal": 6440
+      },
+      {
+        "product": "Point-box",
+        "unit": "Pcs",
+        "qty": 340,
+        "price": 12,
+        "rowTotal": 4080
+      },
+      {
+        "product": "18mm (8X4) 12",
+        "unit": "Sq-Ft",
+        "qty": 384,
+        "price": 68,
+        "rowTotal": 26112
+      }
+    ],
+    "subTotal": 36632,
+    "discount": 0,
+    "grandTotal": 36632,
+    "received": 0,
+    "balance": 36632,
+    "amountWords": "Thirty Six Thousand Six Hundred and Thirty Two Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "24",
+    "customerName": "Arihant Hardware",
+    "customerPhone": "982344434",
+    "billDate": "2025-08-03",
+    "items": [
+      {
+        "product": "4mm TMT",
+        "unit": "Kg",
+        "qty": 524,
+        "price": 94,
+        "rowTotal": 49256
+      },
+      {
+        "product": "22-Guage Tar",
+        "unit": "Kg",
+        "qty": 500,
+        "price": 122,
+        "rowTotal": 61000
+      }
+    ],
+    "subTotal": 110256,
+    "discount": 0,
+    "grandTotal": 110256,
+    "received": 0,
+    "balance": 110256,
+    "amountWords": "One Lakh Ten Thousand Two Hundred and Fifty Six Rupees only",
+    "userId": "admin"
+  }
+]

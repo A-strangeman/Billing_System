@@ -478,3 +478,49 @@ button:disabled {
     margin: 0 15px 15px;
   }
 }
+
+.bill-list-container {
+            position: relative;
+        }
+
+        .bill-item {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        .bill-item.active {
+            background-color: #e0e0e0;
+        }
+
+        .bill-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            display: none; /* Initially hidden */
+        }
+
+        .bill-item.active .bill-actions {
+            display: flex; /* Show when the parent is active */
+            gap: 5px;
+        }
+
+        .bill-actions button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .edit-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
