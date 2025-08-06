@@ -63,5 +63,157 @@
     "balance": 110256,
     "amountWords": "One Lakh Ten Thousand Two Hundred and Fifty Six Rupees only",
     "userId": "admin"
+  },
+  {
+    "estimateNo": "25",
+    "customerName": "Roshan Gupta",
+    "customerPhone": "982344434",
+    "billDate": "2025-08-03",
+    "items": [
+      {
+        "product": "12mm (7X4) 13",
+        "unit": "Sq-Ft",
+        "qty": 364,
+        "price": 49,
+        "rowTotal": 17836
+      },
+      {
+        "product": "Formica",
+        "unit": "Pcs",
+        "qty": 5,
+        "price": 900,
+        "rowTotal": 4500
+      },
+      {
+        "product": "Heatex 1",
+        "unit": "Pcs",
+        "qty": 1,
+        "price": 845,
+        "rowTotal": 845
+      },
+      {
+        "product": "Varnish",
+        "unit": "Pcs",
+        "qty": 1,
+        "price": 1600,
+        "rowTotal": 1600
+      },
+      {
+        "product": "WIRE Rathi Gold 1\"",
+        "unit": "Pcs",
+        "qty": 6,
+        "price": 2300,
+        "rowTotal": 13800
+      }
+    ],
+    "subTotal": 38581,
+    "discount": 0,
+    "grandTotal": 38581,
+    "received": 0,
+    "balance": 38581,
+    "amountWords": "Thirty Eight Thousand Five Hundred and Eighty One Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "30",
+    "customerName": "manoj",
+    "customerPhone": "9823435465",
+    "billDate": "2025-08-04",
+    "items": [
+      {
+        "product": "25 Digital 80X32",
+        "unit": "Pcs",
+        "qty": 12,
+        "price": 2330,
+        "rowTotal": 27960
+      }
+    ],
+    "subTotal": 27960,
+    "discount": 0,
+    "grandTotal": 27960,
+    "received": 0,
+    "balance": 27960,
+    "amountWords": "Twenty Seven Thousand Nine Hundred and Sixty Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "31",
+    "customerName": "manish",
+    "customerPhone": "",
+    "billDate": "2025-08-04",
+    "items": [
+      {
+        "product": "PVC 4\" pipe",
+        "unit": "Pcs",
+        "qty": 18,
+        "price": 1700,
+        "rowTotal": 30600
+      }
+    ],
+    "subTotal": 30600,
+    "discount": 0,
+    "grandTotal": 30600,
+    "received": 0,
+    "balance": 30600,
+    "amountWords": "Thirty Thousand Six Hundred Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "32",
+    "customerName": "manish",
+    "customerPhone": "",
+    "billDate": "2025-08-04",
+    "items": [
+      {
+        "product": "43 maruti Cement OPC",
+        "unit": "Pcs",
+        "qty": 50,
+        "price": 800,
+        "rowTotal": 40000
+      },
+      {
+        "product": "16mm NS Black",
+        "unit": "Kg",
+        "qty": 56,
+        "price": 260,
+        "rowTotal": 14560
+      }
+    ],
+    "subTotal": 54560,
+    "discount": 0,
+    "grandTotal": 54560,
+    "received": 0,
+    "balance": 54560,
+    "amountWords": "Fifty Four Thousand Five Hundred and Sixty Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "33",
+    "customerName": "bishal gupta",
+    "customerPhone": "",
+    "billDate": "2025-08-04",
+    "items": [
+      {
+        "product": "Jenosolin 20L",
+        "unit": "Pcs",
+        "qty": 4,
+        "price": 4500,
+        "rowTotal": 18000
+      },
+      {
+        "product": "Enamel 1L",
+        "unit": "Pcs",
+        "qty": 7,
+        "price": 560,
+        "rowTotal": 3920
+      }
+    ],
+    "subTotal": 21920,
+    "discount": 0,
+    "grandTotal": 21920,
+    "received": 0,
+    "balance": 21920,
+    "amountWords": "Twenty One Thousand Nine Hundred and Twenty Rupees only",
+    "userId": "admin"
   }
 ]

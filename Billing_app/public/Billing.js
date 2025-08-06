@@ -16,16 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({
-                        email,
-                        password
-                    }),
+                    body: JSON.stringify({ email, password }),
                 });
 
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    // Corrected: Save the userId upon successful login
                     localStorage.setItem("currentUserId", data.userId);
                     window.location.href = "welcome.html";
                 } else {
@@ -51,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Corrected: Use a GET request with the userId as a URL query parameter
         fetch(`/api/get-bills?userId=${userId}`)
             .then(response => {
                 if (!response.ok) {
@@ -65,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     bills.forEach(bill => {
                         const li = document.createElement("li");
-                        // Corrected: Add the bill actions and class names
                         li.innerHTML = `
                             Bill No: <span class="bill-no">${bill.estimateNo}</span> - Customer: ${bill.customerName}
                             <div class="bill-actions">
@@ -84,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 billList.innerHTML = "<li>Error loading bills. Please check your network and try again.</li>";
             });
 
-        // Corrected: Handle clicks on the bill list
         billList.addEventListener("click", (e) => {
             const clickedItem = e.target.closest(".bill-item");
             if (!clickedItem) return;
@@ -103,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.location.href = "make_bill.html";
             } else if (e.target.classList.contains("delete-btn")) {
                 if (confirm(`Are you sure you want to delete bill ${clickedItem.querySelector('.bill-no').textContent}?`)) {
-                    // This is a placeholder for your API call to delete the bill
                     console.log(`Deleting bill: ${clickedItem.dataset.bill}`);
                     clickedItem.remove();
                 }
@@ -311,7 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
         doc.text("Estimated Bill", 297.5, 30, { align: "center" });
 
         // ... Add all your PDF generation code here
-        doc.save(`Bill_${estimateNo}.pdf`);
+        doc.save(`${estimateNoEl.value} - ${customerNameEl.value || "Bill"}.pdf`);
+
     }
 
     // --- EVENT LISTENERS ---
