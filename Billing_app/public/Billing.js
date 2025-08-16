@@ -17,13 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({ email, password }),
+                    credentials: "include" // <-- send cookies on login
                 });
 
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    localStorage.setItem("currentUserId", data.userId);
-                    window.location.href = "welcome.html";
+                    window.location.href = "welcome.html"; // No need to store currentUserId
                 } else {
                     alert(data.message || "Login failed");
                 }
@@ -36,49 +36,65 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------
-    // Logic for the edit_bill.html page
+    // Logic for the edit_bill.html page - FIXED
     // -------------------------
     if (window.location.pathname.endsWith("edit_bill.html")) {
         const billList = document.getElementById("billList");
-        const userId = localStorage.getItem("currentUserId");
 
-        if (!userId) {
-            billList.innerHTML = "<li>Please log in to view your bills.</li>";
-            return;
-        }
-
-        fetch(`/api/get-bills?userId=${userId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+        // Fetch bills for the logged-in user
+        fetch(`/api/get-bills`, {
+            method: "GET",
+            credentials: "include" // <-- send cookies to prove session
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    billList.innerHTML = "<li>Please log in to view your bills.</li>";
+                    return [];
                 }
-                return response.json();
-            })
-            .then(bills => {
-                if (bills.length === 0) {
-                    billList.innerHTML = "<li>No bills found for this user.</li>";
-                } else {
-                    bills.forEach(bill => {
-                        const li = document.createElement("li");
-                        li.innerHTML = `
-                            Bill No: <span class="bill-no">${bill.estimateNo}</span> - Customer: ${bill.customerName}
-                            <div class="bill-actions">
-                                <button class="edit-btn">Edit</button>
-                                <button class="delete-btn">Delete</button>
-                            </div>
-                        `;
-                        li.classList.add("bill-item");
-                        li.dataset.bill = JSON.stringify(bill);
-                        billList.appendChild(li);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching bills:", error);
-                billList.innerHTML = "<li>Error loading bills. Please check your network and try again.</li>";
-            });
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(billRecords => {
+            if (!billRecords || billRecords.length === 0) {
+                billList.innerHTML = "<li>No bills found for this user.</li>";
+            } else {
+                billList.innerHTML = ""; // Clear list before adding
+                billRecords.forEach(record => {
+                    // Parse the billData JSON string to get the actual bill object
+                    let bill;
+                    try {
+                        bill = JSON.parse(record.billData);
+                    } catch (e) {
+                        console.error('Error parsing bill data:', e);
+                        bill = {
+                            estimateNo: record.estimateNo || 'Unknown',
+                            customerName: record.customerName || 'Unknown Customer'
+                        };
+                    }
 
-        billList.addEventListener("click", (e) => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                        Bill No: <span class="bill-no">${bill.estimateNo}</span> - Customer: ${bill.customerName}
+                        <div class="bill-actions">
+                            <button class="edit-btn">Edit</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    `;
+                    li.classList.add("bill-item");
+                    li.dataset.bill = JSON.stringify(bill);
+                    billList.appendChild(li);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching bills:", error);
+            billList.innerHTML = "<li>Error loading bills. Please check your network and try again.</li>";
+        });
+
+        // Bill action buttons - ENHANCED DELETE FUNCTIONALITY
+        billList.addEventListener("click", async (e) => {
             const clickedItem = e.target.closest(".bill-item");
             if (!clickedItem) return;
 
@@ -95,9 +111,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.setItem("billToEdit", JSON.stringify(billToEdit));
                 window.location.href = "make_bill.html";
             } else if (e.target.classList.contains("delete-btn")) {
-                if (confirm(`Are you sure you want to delete bill ${clickedItem.querySelector('.bill-no').textContent}?`)) {
-                    console.log(`Deleting bill: ${clickedItem.dataset.bill}`);
-                    clickedItem.remove();
+                const billToDelete = JSON.parse(clickedItem.dataset.bill);
+                const billNo = clickedItem.querySelector('.bill-no').textContent;
+                
+                if (confirm(`Are you sure you want to delete bill ${billNo}?`)) {
+                    try {
+                        const response = await fetch('/api/delete-bill', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ estimateNo: billToDelete.estimateNo })
+                        });
+
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            clickedItem.remove();
+                            alert('Bill deleted successfully');
+                            
+                            // Check if no bills left
+                            if (billList.children.length === 0) {
+                                billList.innerHTML = "<li>No bills found for this user.</li>";
+                            }
+                        } else {
+                            alert(result.message || 'Failed to delete bill');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting bill:', error);
+                        alert('Error deleting bill. Please try again.');
+                    }
                 }
             }
         });
@@ -192,31 +236,34 @@ document.addEventListener("DOMContentLoaded", () => {
     let plyCount = null;
 
     // ---------- INIT ----------
- // Billing.js
-// ... (previous code)
-
-    // ---------- INIT ----------
     // This is the key section that loads the bill data
     const savedBill = JSON.parse(localStorage.getItem("billToEdit"));
     if (savedBill) {
-        // Corrected: Load the saved bill data
-        estimateNoEl.value = savedBill.estimateNo;
-        customerNameEl.value = savedBill.customerName;
-        customerPhoneEl.value = savedBill.customerPhone;
-        billDateEl.value = savedBill.billDate;
-        discountEl.value = savedBill.discount;
-        receivedEl.value = savedBill.received;
+        // Load the saved bill data
+        estimateNoEl.value = savedBill.estimateNo || "";
+        customerNameEl.value = savedBill.customerName || "";
+        customerPhoneEl.value = savedBill.customerPhone || "";
+        billDateEl.value = savedBill.billDate || new Date().toISOString().split("T")[0];
+        discountEl.value = savedBill.discount || 0;
+        receivedEl.value = savedBill.received || 0;
+
+        // Clear existing rows first
+        tbody.innerHTML = "";
 
         // Populate the table rows
-        savedBill.items.forEach(item => {
-            addRow(item.product, item.qty, item.unit, item.price);
-        });
+        if (savedBill.items && savedBill.items.length > 0) {
+            savedBill.items.forEach(item => {
+                addRow(item.product || "", item.qty || 1, item.unit || "Pcs", item.price || 0);
+            });
+        } else {
+            // Add at least one empty row if no items
+            addRow();
+        }
 
         // Clear the stored bill so it's not loaded again on refresh
         localStorage.removeItem("billToEdit");
     } else {
-        // This is the code that is being executed, leading to a blank form
-        // and likely the "Choose a category..." message
+        // This is for new bills
         billDateEl.value = new Date().toISOString().split("T")[0];
         addRow();
         let lastEstimate = parseInt(localStorage.getItem("lastEstimateNo") || "0", 10);
@@ -224,8 +271,6 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("lastEstimateNo", lastEstimate);
         estimateNoEl.value = lastEstimate;
     }
-
-
 
     // --- `saveAndDownloadBill` FUNCTION & HELPER ---
     function getBillData() {
@@ -253,58 +298,41 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // ------------- saveAndDownloadBill (fixed) -------------
     async function saveAndDownloadBill() {
         const billData = getBillData();
-        const userId = localStorage.getItem("currentUserId");
 
-        if (!userId) {
-            alert("Please log in to save a bill.");
-            return;
-        }
-
+        // Ensure fetch includes credentials so session cookie goes to server.
         try {
-            // Corrected: Send the userId to the server along with the bill data
             const response = await fetch('/api/save-bill', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ ...billData,
-                    userId
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',         // IMPORTANT: send session cookie
+                body: JSON.stringify(billData)
             });
+
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server responded with an error: ${response.status} - ${errorText}`);
+                // try to parse json error, fallback to text
+                let errText = "";
+                try { errText = JSON.stringify(await response.json()); } catch (e) { errText = await response.text(); }
+                console.error('Failed to save bill on server:', response.status, errText);
+                // still proceed to generate PDF
+                alert('Warning: bill could not be saved to server. PDF will still be generated.');
+            } else {
+                console.log('Bill saved successfully on server.');
             }
-            console.log('Bill saved successfully on the server.');
-        } catch (error) {
-            console.error('Error saving bill:', error);
-            alert('An error occurred while saving the bill. The PDF will still be generated.');
+        } catch (err) {
+            console.error('Network / save error:', err);
+            alert('Warning: error while saving bill. PDF will still be generated.');
         }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF("p", "pt", "a4");
-
-        const companyName = "ABC Company";
-        const companyPhone = "Phone: 9825333385";
-        const estimateNo = billData.estimateNo || "-";
-        const date = billData.billDate || "-";
-        const cust = billData.customerName || "-";
-        const phone = billData.customerPhone || "-";
-        const subTotal = billData.subTotal.toFixed(2) || "0.00";
-        const discount = billData.discount.toFixed(2) || "0.00";
-        const grandTotal = billData.grandTotal.toFixed(2) || "0.00";
-        const received = billData.received.toFixed(2) || "0.00";
-        const balance = billData.balance.toFixed(2) || "0.00";
-        const amountWords = billData.amountWords || "";
-
-        doc.setFontSize(16);
-        doc.text("Estimated Bill", 297.5, 30, { align: "center" });
-
-        // ... Add all your PDF generation code here
-        doc.save(`${estimateNoEl.value} - ${customerNameEl.value || "Bill"}.pdf`);
-
+        // Generate and download the PDF using the same data we just saved
+        try {
+            await downloadPDF(billData);
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            alert('Failed to generate PDF. See console for details.');
+        }
     }
 
     // --- EVENT LISTENERS ---
@@ -337,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </td>
           <td><input type="number" class="price" min="0" value="${price}"></td>
           <td class="row-total">0.00</td>
-          <td><button class="del">❌</button></td>
+          <td><button class="del">×</button></td>
         `;
         tbody.appendChild(tr);
         renumber();
@@ -706,159 +734,163 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ---------- PDF ----------
-    async function downloadPDF() {
-        const {
-            jsPDF
-        } = window.jspdf;
-        const doc = new jsPDF("p", "pt", "a4");
+    // ------------- saveAndDownloadBill (fixed) -------------
+async function saveAndDownloadBill() {
+    const billData = getBillData();
 
-        const companyName = "ABC Company";
-        const companyPhone = "Phone: 9825333385";
-        const estimateNo = estimateNoEl.value || "-";
-        const date = billDateEl.value || "-";
-        const cust = customerNameEl.value || "-";
-        const phone = customerPhoneEl.value || "-";
-        const subTotal = subTotalEl.value || "0";
-        const discount = discountEl.value || "0";
-        const grandTotal = grandTotalEl.value || "0";
-        const received = receivedEl.value || "0";
-        const balance = balanceEl.value || "0";
-        const amountWords = amountWordsEl ? (amountWordsEl.value || "") : "";
-
-        doc.setFontSize(16);
-        doc.text("Estimated Bill", 297.5, 30, {
-            align: "center"
+    // If you migrated backend to session-based auth, you don't need to send userId.
+    // Ensure fetch includes credentials so session cookie goes to server.
+    try {
+        const response = await fetch('/api/save-bill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',         // IMPORTANT: send session cookie
+            body: JSON.stringify(billData)
         });
 
-        doc.setFontSize(18).setFont(undefined, "bold");
-        doc.text(companyName, 40, 60);
-        doc.setFontSize(10).setFont(undefined, "normal");
-        doc.text(companyPhone, 40, 75);
-
-        const leftX = 40,
-            rightX = 340,
-            boxY = 95,
-            boxH = 60,
-            boxW = 515;
-        doc.rect(leftX, boxY, boxW, boxH);
-        doc.line(rightX, boxY, rightX, boxY + boxH);
-
-        doc.setFontSize(11);
-        doc.text("Bill To:", leftX + 8, boxY + 18);
-        doc.setFontSize(10);
-        doc.text(cust, leftX + 8, boxY + 34);
-        if (phone) doc.text(phone, leftX + 8, boxY + 50);
-
-        doc.setFontSize(11);
-        doc.text("Estimate Details:", rightX + 8, boxY + 18);
-        doc.setFontSize(10);
-        doc.text(`No: ${estimateNo}`, rightX + 8, boxY + 34);
-        doc.text(`Date: ${date}`, rightX + 8, boxY + 50);
-
-        const tableData = [];
-        tbody.querySelectorAll("tr").forEach(tr => {
-            const sn = tr.querySelector(".sn").textContent;
-            const product = tr.querySelector(".product").value || "";
-            const unit = tr.querySelector(".unit").value || "";
-            const qty = tr.querySelector(".qty").value || "0";
-            const price = parseFloat(tr.querySelector(".price").value || "0").toFixed(2);
-            const amt = tr.querySelector(".row-total").textContent || "0.00";
-            tableData.push([sn, product, qty, unit, `Rs. ${price}`, `Rs. ${amt}`]);
-        });
-
-        doc.autoTable({
-            head: [
-                ["#", "Item name", "Quantity", "Unit", "Price/ Unit(Rs)", "Amount(Rs)"]
-            ],
-            body: tableData,
-            startY: boxY + boxH + 20,
-            theme: "grid",
-            styles: {
-                fontSize: 9,
-                cellPadding: 4
-            },
-            headStyles: {
-                fillColor: [60, 60, 60],
-                textColor: 255
-            },
-            columnStyles: {
-                0: {
-                    cellWidth: 25
-                },
-                1: {
-                    cellWidth: 220
-                },
-                2: {
-                    cellWidth: 65,
-                    halign: "right"
-                },
-                3: {
-                    cellWidth: 50
-                },
-                4: {
-                    cellWidth: 95,
-                    halign: "right"
-                },
-                5: {
-                    cellWidth: 95,
-                    halign: "right"
-                }
-            }
-        });
-
-        let y = doc.lastAutoTable.finalY + 8;
-        doc.setFont(undefined, "bold");
-        doc.text(`Total`, 40, y + 15);
-        doc.text(`Rs. ${grandTotal}`, 500, y + 15, {
-            align: "right"
-        });
-
-        y += 40;
-        doc.setFont(undefined, "normal");
-        doc.text(`Sub Total :`, 400, y);
-        doc.text(`Rs. ${subTotal}`, 575, y, {
-            align: "right"
-        });
-
-        y += 15;
-        doc.text(`Discount :`, 400, y);
-        doc.text(`Rs. ${discount}`, 575, y, {
-            align: "right"
-        });
-
-        y += 15;
-        doc.setFont(undefined, "bold");
-        doc.text(`Total :`, 400, y);
-        doc.text(`Rs. ${grandTotal}`, 575, y, {
-            align: "right"
-        });
-
-        // Amount in words
-        if (amountWords) {
-            y += 30;
-            doc.setFont(undefined, "normal");
-            doc.text("Invoice Amount in Words:", 40, y);
-            const splitWords = doc.splitTextToSize(amountWords, 515);
-            doc.text(splitWords, 40, y + 15);
-            y += 40 + (splitWords.length * 12);
+        if (!response.ok) {
+            // try to parse json error, fallback to text
+            let errText = "";
+            try { errText = JSON.stringify(await response.json()); } catch (e) { errText = await response.text(); }
+            console.error('Failed to save bill on server:', response.status, errText);
+            // still proceed to generate PDF
+            alert('Warning: bill could not be saved to server. PDF will still be generated.');
         } else {
-            y += 30;
+            console.log('Bill saved successfully on server.');
         }
-
-        doc.text("Received :", 400, y);
-        doc.text(`Rs. ${received}`, 575, y, {
-            align: "right"
-        });
-
-        y += 15;
-        doc.text("Balance  :", 400, y);
-        doc.text(`Rs. ${balance}`, 575, y, {
-            align: "right"
-        });
-
-        const fileName = `${estimateNo} - ${customerNameEl.value}.pdf`;
-        doc.save(fileName);
+    } catch (err) {
+        console.error('Network / save error:', err);
+        alert('Warning: error while saving bill. PDF will still be generated.');
     }
+
+    // Generate and download the PDF using the same data we just saved
+    try {
+        await downloadPDF(billData);
+    } catch (err) {
+        console.error('Error generating PDF:', err);
+        alert('Failed to generate PDF. See console for details.');
+    }
+}
+
+// ------------- downloadPDF accepts billData -------------
+async function downloadPDF(billData = null) {
+    // If no billData passed, read from DOM (backwards-compatible)
+    if (!billData) billData = getBillData();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "pt", "a4");
+
+    const companyName = "ABC Company";
+    const companyPhone = "Phone: 9825333385";
+    const estimateNo = billData.estimateNo || "-";
+    const date = billData.billDate || "-";
+    const cust = billData.customerName || "-";
+    const phone = billData.customerPhone || "-";
+    const subTotal = (billData.subTotal || 0).toFixed(2);
+    const discount = (billData.discount || 0).toFixed(2);
+    const grandTotal = (billData.grandTotal || 0).toFixed(2);
+    const received = (billData.received || 0).toFixed(2);
+    const balance = (billData.balance || 0).toFixed(2);
+    const amountWords = billData.amountWords || "";
+
+    // Header
+    doc.setFontSize(16);
+    doc.text("Estimated Bill", 297.5, 30, { align: "center" });
+
+    doc.setFontSize(18).setFont(undefined, "bold");
+    doc.text(companyName, 40, 60);
+    doc.setFontSize(10).setFont(undefined, "normal");
+    doc.text(companyPhone, 40, 75);
+
+    // Info box
+    const leftX = 40, rightX = 340, boxY = 95, boxH = 60, boxW = 515;
+    doc.rect(leftX, boxY, boxW, boxH);
+    doc.line(rightX, boxY, rightX, boxY + boxH);
+
+    doc.setFontSize(11);
+    doc.text("Bill To:", leftX + 8, boxY + 18);
+    doc.setFontSize(10);
+    doc.text(cust, leftX + 8, boxY + 34);
+    if (phone) doc.text(phone, leftX + 8, boxY + 50);
+
+    doc.setFontSize(11);
+    doc.text("Estimate Details:", rightX + 8, boxY + 18);
+    doc.setFontSize(10);
+    doc.text(`No: ${estimateNo}`, rightX + 8, boxY + 34);
+    doc.text(`Date: ${date}`, rightX + 8, boxY + 50);
+
+    // Create tableData from billData.items
+    const tableData = (billData.items || []).map((it, idx) => {
+        const sn = (idx + 1).toString();
+        const prod = it.product || "";
+        const qty = (it.qty || 0).toString();
+        const unit = it.unit || "";
+        const price = Number(it.price || 0).toFixed(2);
+        const amt = Number(it.rowTotal || (it.qty && it.price ? it.qty * it.price : 0)).toFixed(2);
+        return [sn, prod, qty, unit, `Rs. ${price}`, `Rs. ${amt}`];
+    });
+
+    // autoTable requires the plugin; make sure it's loaded in your HTML
+    doc.autoTable({
+        head: [["#", "Item name", "Quantity", "Unit", "Price/ Unit(Rs)", "Amount(Rs)"]],
+        body: tableData,
+        startY: boxY + boxH + 20,
+        theme: "grid",
+        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [60, 60, 60], textColor: 255 },
+        columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 220 },
+            2: { cellWidth: 65, halign: "right" },
+            3: { cellWidth: 50 },
+            4: { cellWidth: 95, halign: "right" },
+            5: { cellWidth: 95, halign: "right" }
+        }
+    });
+
+    // Totals (placed below table)
+    let y = doc.lastAutoTable ? (doc.lastAutoTable.finalY + 8) : (boxY + boxH + 20 + (tableData.length * 12));
+    doc.setFont(undefined, "bold");
+    doc.text(`Total`, 40, y + 15);
+    doc.text(`Rs. ${grandTotal}`, 500, y + 15, { align: "right" });
+
+    y += 40;
+    doc.setFont(undefined, "normal");
+    doc.text(`Sub Total :`, 400, y);
+    doc.text(`Rs. ${subTotal}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.text(`Discount :`, 400, y);
+    doc.text(`Rs. ${discount}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.setFont(undefined, "bold");
+    doc.text(`Total :`, 400, y);
+    doc.text(`Rs. ${grandTotal}`, 575, y, { align: "right" });
+
+    // Amount in words
+    if (amountWords) {
+        y += 30;
+        doc.setFont(undefined, "normal");
+        doc.text("Invoice Amount in Words:", 40, y);
+        const splitWords = doc.splitTextToSize(amountWords, 515);
+        doc.text(splitWords, 40, y + 15);
+        y += 40 + (splitWords.length * 12);
+    } else {
+        y += 30;
+    }
+
+    doc.text("Received :", 400, y);
+    doc.text(`Rs. ${received}`, 575, y, { align: "right" });
+
+    y += 15;
+    doc.text("Balance :", 400, y);
+    doc.text(`Rs. ${balance}`, 575, y, { align: "right" });
+
+    // safe filename
+    const safeName = `${estimateNo || "Estimate"} - ${billData.customerName || "Bill"}`.replace(/[\/\\:?*"<>|]+/g, "_");
+    doc.save(`${safeName}.pdf`);
+}
 
     // ---------- NUMBER TO WORDS (Indian System) ----------
     function numberToWordsIndian(num) {

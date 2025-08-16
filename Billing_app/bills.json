@@ -215,5 +215,93 @@
     "balance": 21920,
     "amountWords": "Twenty One Thousand Nine Hundred and Twenty Rupees only",
     "userId": "admin"
+  },
+  {
+    "estimateNo": "49",
+    "customerName": "",
+    "customerPhone": "",
+    "billDate": "2025-08-10",
+    "items": [
+      {
+        "product": "12X12 Tile",
+        "unit": "Pcs",
+        "qty": 23,
+        "price": 1223,
+        "rowTotal": 28129
+      }
+    ],
+    "subTotal": 28129,
+    "discount": 0,
+    "grandTotal": 28129,
+    "received": 0,
+    "balance": 28129,
+    "amountWords": "Twenty Eight Thousand One Hundred and Twenty Nine Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "50",
+    "customerName": "Rohit Sheety",
+    "customerPhone": "982344434",
+    "billDate": "2025-08-10",
+    "items": [
+      {
+        "product": "32 Digital 80X32",
+        "unit": "Pcs",
+        "qty": 12,
+        "price": 12000,
+        "rowTotal": 144000
+      }
+    ],
+    "subTotal": 144000,
+    "discount": 0,
+    "grandTotal": 144000,
+    "received": 0,
+    "balance": 144000,
+    "amountWords": "One Lakh Forty Four Thousand Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "51",
+    "customerName": "niraj",
+    "customerPhone": "wwe is",
+    "billDate": "2025-08-10",
+    "items": [
+      {
+        "product": "Formica",
+        "unit": "Pcs",
+        "qty": 11,
+        "price": 700,
+        "rowTotal": 7700
+      }
+    ],
+    "subTotal": 7700,
+    "discount": 0,
+    "grandTotal": 7700,
+    "received": 0,
+    "balance": 7700,
+    "amountWords": "Seven Thousand Seven Hundred Rupees only",
+    "userId": "admin"
+  },
+  {
+    "estimateNo": "52",
+    "customerName": "wwe",
+    "customerPhone": "",
+    "billDate": "2025-08-10",
+    "items": [
+      {
+        "product": "PVC 1.5\" Elbow",
+        "unit": "Pcs",
+        "qty": 34,
+        "price": 220,
+        "rowTotal": 7480
+      }
+    ],
+    "subTotal": 7480,
+    "discount": 0,
+    "grandTotal": 7480,
+    "received": 0,
+    "balance": 7480,
+    "amountWords": "Seven Thousand Four Hundred and Eighty Rupees only",
+    "userId": "admin"
   }
 ]

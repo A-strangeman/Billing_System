@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deleted Bills</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Extra styles for the buttons */
+    .bill-actions {
+      margin-top: 5px;
+    }
+    .bill-actions button {
+      margin-right: 8px;
+      padding: 4px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .view-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <h2 class="company-title">ABC Company</h2>
+      <ul class="menu">
+        <li><a href="make_bill.html">Make a New Bill</a></li>
+        <li><a href="edit_bill.html">Edit a Bill</a></li>
+        <li class="active"><a href="deleted_bills.html">Deleted Bills</a></li>
+        <li><a href="#">Report</a></li>
+        <li><a href="#">Add Purchase</a></li>
+      </ul>
+    </aside>
+
+    <main class="content">
+      <header>
+        <h1>Deleted Bills</h1>
+        <button id="logoutBtn">Logout</button>
+      </header>
+
+      <section class="info">
+        <p>Click a deleted bill to view or permanently remove it.</p>
+        <div id="billListContainer">
+          <ul id="deletedBillList" class="bill-list">
+            <!-- JavaScript will dynamically fill this with:
+            <li class="bill-item">
+              <div>Bill No: 55 - Customer: AAzad Mam - Date: 2025-08-12</div>
+              <div class="bill-actions">
+                <button class="view-btn">View</button>
+                <button class="delete-btn">Delete Permanently</button>
+              </div>
+            </li>
+            -->
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- jsPDF (required for View -> PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Your page logic -->
+  <script defer src="deleted_bills.js"></script>
+</body>
+</html>
